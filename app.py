@@ -6,13 +6,13 @@ import base64
 import json
 from werkzeug.utils import secure_filename
 
-# Try to import supabase
+# Try to import supabase (will work on Vercel if in requirements.txt)
 try:
     from supabase import create_client
     SUPABASE_AVAILABLE = True
 except ImportError:
     SUPABASE_AVAILABLE = False
-    print("⚠️ Supabase not installed. Run: pip install supabase")
+    print("⚠️ Supabase not available")
 
 app = Flask(__name__)
 app.secret_key = 'dev-secret-key-12345'
@@ -26,10 +26,10 @@ DB_STATUS = {'connected': False, 'type': 'json', 'error': None}
 
 if SUPABASE_AVAILABLE:
     try:
-        print(f"🔗 Connecting to Supabase: {SUPABASE_URL}")
+        print(f"🔗 Connecting to Supabase...")
         supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
         
-        # Test the connection with a simple query
+        # Test the connection
         test_response = supabase.table('orders').select('count', count='exact').limit(1).execute()
         
         DB_STATUS['connected'] = True
@@ -43,9 +43,10 @@ if SUPABASE_AVAILABLE:
         print("📁 Falling back to JSON storage")
 else:
     supabase = None
-    print("📁 Using JSON file storage (Supabase not installed)")
+    print("📁 Using JSON file storage")
 
 # ===== FILE CONFIGURATION =====
+# Use /tmp for Vercel, local folder for development
 if os.environ.get('VERCEL'):
     UPLOAD_FOLDER = '/tmp/uploads'
     ENHANCED_FOLDER = '/tmp/enhanced'
@@ -113,7 +114,7 @@ def add_order(order_data):
                 print(f"✅ Order saved to Supabase: {order_data['order_id']}")
                 return response.data[0]['id']
         except Exception as e:
-            print(f"⚠️ Error saving to Supabase: {e}, using JSON fallback")
+            print(f"⚠️ Error saving to Supabase: {e}")
             return add_order_json(order_data)
     return add_order_json(order_data)
 
@@ -224,8 +225,7 @@ def test_db():
         'error': DB_STATUS.get('error'),
         'orders_count': len(load_orders()),
         'supabase_available': SUPABASE_AVAILABLE,
-        'url': SUPABASE_URL,
-        'message': '✅ Supabase connected!' if DB_STATUS['connected'] else '📁 Using JSON storage'
+        'message': '✅ Connected to Supabase!' if DB_STATUS['connected'] else '📁 Using JSON storage'
     }
     return jsonify(result)
 
@@ -408,11 +408,4 @@ if __name__ == '__main__':
     if DB_STATUS.get('error'):
         print(f"⚠️ Error: {DB_STATUS['error']}")
     print("="*60)
-    print("\n💡 Current Status:")
-    if DB_STATUS['connected']:
-        print("   ✅ Using Supabase - Data is persistent!")
-    else:
-        print("   📁 Using JSON storage - Data saved locally")
-        print("   🔧 To use Supabase, install: pip install supabase")
-    print("")
     app.run(debug=True, host='0.0.0.0', port=5000)
