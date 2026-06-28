@@ -1,658 +1,206 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AI Photo Enhancement · ApexBuilt</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
-    <style>
-        * { font-family: 'Inter', sans-serif; }
-        .gradient-hero {
-            background: linear-gradient(135deg, #0b2b44 0%, #1a5276 50%, #0b2b44 100%);
-            position: relative;
-            overflow: hidden;
-        }
-        .glass-card {
-            background: rgba(255,255,255,0.05);
-            backdrop-filter: blur(16px);
-            border: 1px solid rgba(255,255,255,0.08);
-        }
-        .btn-primary {
-            background: linear-gradient(135deg, #1a5276, #2e86c1);
-            transition: all 0.3s ease;
-        }
-        .btn-primary:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 20px 50px rgba(26, 82, 118, 0.4);
-        }
-        .pricing-card {
-            background: white;
-            border-radius: 24px;
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            border: 1px solid rgba(0,0,0,0.04);
-        }
-        .pricing-card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 30px 70px rgba(26, 82, 118, 0.1);
-        }
-        .drop-zone {
-            border: 2px dashed #1a5276;
-            border-radius: 20px;
-            transition: all 0.3s ease;
-            background: rgba(26, 82, 118, 0.03);
-        }
-        .drop-zone.drag-over {
-            border-color: #2e86c1;
-            background: rgba(26, 82, 118, 0.08);
-            transform: scale(1.01);
-        }
-        .contact-input {
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            padding: 14px 18px;
-            transition: all 0.3s ease;
-            width: 100%;
-        }
-        .contact-input:focus {
-            outline: none;
-            border-color: #1a5276;
-            box-shadow: 0 0 0 4px rgba(26, 82, 118, 0.1);
-        }
-        .admin-card {
-            background: white;
-            border-radius: 16px;
-            transition: all 0.3s ease;
-            border: 1px solid #e2e8f0;
-        }
-        .admin-card:hover {
-            box-shadow: 0 8px 25px rgba(0,0,0,0.06);
-        }
-        .status-badge {
-            padding: 4px 14px;
-            border-radius: 20px;
-            font-size: 0.75rem;
-            font-weight: 600;
-        }
-        .status-pending { background: #fef3c7; color: #92400e; }
-        .status-processing { background: #dbeafe; color: #1e40af; }
-        .status-completed { background: #d1fae5; color: #065f46; }
-        .nav-link {
-            position: relative;
-            color: rgba(255,255,255,0.7);
-            transition: color 0.3s;
-        }
-        .nav-link::after {
-            content: '';
-            position: absolute;
-            bottom: -6px;
-            left: 50%;
-            width: 0;
-            height: 2.5px;
-            background: #2e86c1;
-            transition: all 0.3s ease;
-            transform: translateX(-50%);
-            border-radius: 2px;
-        }
-        .nav-link:hover { color: white; }
-        .nav-link:hover::after { width: 80%; }
-        .section-title { font-weight: 800; letter-spacing: -0.02em; }
-        .animate-float { animation: float 6s ease-in-out infinite; }
-        @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-        .fade-slide { opacity: 0; transform: translateY(20px); animation: fadeSlide 0.6s ease-out forwards; }
-        @keyframes fadeSlide { 0% { opacity: 0; transform: translateY(20px); } 100% { opacity: 1; transform: translateY(0); } }
-        .thumbnail-preview {
-            width: 100px;
-            height: 100px;
-            object-fit: cover;
-            border-radius: 12px;
-            border: 2px solid #e2e8f0;
-        }
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #0b2b44; }
-        ::-webkit-scrollbar-thumb { background: #2e86c1; border-radius: 4px; }
-        .success-message {
-            background: #d1fae5;
-            border-left: 4px solid #065f46;
-            border-radius: 12px;
-            padding: 16px 20px;
-        }
-        .admin-table th {
-            background: #f8fafc;
-            font-weight: 600;
-            color: #1e293b;
-            padding: 12px 16px;
-            text-align: left;
-            border-bottom: 2px solid #e2e8f0;
-        }
-        .admin-table td {
-            padding: 12px 16px;
-            border-bottom: 1px solid #f1f5f9;
-            vertical-align: middle;
-        }
-        .admin-table tr:hover {
-            background: #f8fafc;
-        }
-    </style>
-</head>
-<body>
+{% extends "layout.html" %}
 
-    <!-- ===== TOP BAR ===== -->
-    <div class="bg-[#0b2b44] text-white/60 text-xs py-1.5 text-center border-b border-white/5">
-        <div class="container mx-auto px-4 flex flex-wrap justify-center items-center gap-6">
-            <span><i class="fas fa-phone text-[#2e86c1] mr-1"></i> +254 700 123 456</span>
-            <span><i class="fas fa-envelope text-[#2e86c1] mr-1"></i> hello@apexbuilt.com</span>
-            <span><i class="fas fa-clock text-[#2e86c1] mr-1"></i> 24/7 Support</span>
+{% block title %}ApexBuilt · AI Photo Enhancement{% endblock %}
+
+{% block content %}
+<!-- TOP BAR -->
+<div class="bg-[#0b2b44] text-white/60 text-xs py-1.5 text-center border-b border-white/5">
+    <div class="container mx-auto px-4 flex flex-wrap justify-center items-center gap-6">
+        <span><i class="fas fa-phone text-[#2e86c1] mr-1"></i> +254 700 123 456</span>
+        <span><i class="fas fa-envelope text-[#2e86c1] mr-1"></i> hello@apexbuilt.com</span>
+        <span><i class="fas fa-clock text-[#2e86c1] mr-1"></i> 24/7 Support</span>
+    </div>
+</div>
+
+<!-- NAV -->
+<nav class="fixed top-6 left-0 right-0 z-50 px-4">
+    <div class="max-w-7xl mx-auto glass-card rounded-2xl shadow-2xl border border-white/5">
+        <div class="flex items-center justify-between h-16 px-6">
+            <a href="/" class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#1a5276] to-[#2e86c1] flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                    <i class="fas fa-crown"></i>
+                </div>
+                <span class="text-xl font-bold text-white">Apex<span class="text-[#2e86c1]">Built</span></span>
+            </a>
+            <div class="hidden md:flex items-center gap-6 text-sm">
+                <a href="#home" class="nav-link">Home</a>
+                <a href="#pricing" class="nav-link">Pricing</a>
+                <a href="#upload" class="nav-link">Upload</a>
+                <a href="/admin" class="nav-link text-[#2e86c1]">Dashboard</a>
+            </div>
+            <div class="flex items-center gap-3">
+                <button onclick="document.getElementById('upload').scrollIntoView({behavior:'smooth'})" class="px-5 py-2 rounded-full btn-primary text-white font-semibold text-sm shadow-lg">
+                    <i class="fas fa-upload mr-1.5"></i> Upload
+                </button>
+            </div>
         </div>
     </div>
+</nav>
 
-    <!-- ===== NAVIGATION ===== -->
-    <nav class="fixed top-6 left-0 right-0 z-50 px-4">
-        <div class="max-w-7xl mx-auto glass-card rounded-2xl shadow-2xl border border-white/5">
-            <div class="flex items-center justify-between h-16 px-6">
-                <a href="/" class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#1a5276] to-[#2e86c1] flex items-center justify-center text-white font-bold text-lg shadow-lg">
-                        <i class="fas fa-crown"></i>
-                    </div>
-                    <span class="text-xl font-bold text-white">Apex<span class="text-[#2e86c1]">Built</span></span>
-                </a>
-                <div class="hidden md:flex items-center gap-6 text-sm">
-                    <a href="#home" class="nav-link">Home</a>
-                    <a href="#pricing" class="nav-link">Pricing</a>
-                    <a href="#upload" class="nav-link">Upload</a>
-                    <a href="#admin" class="nav-link">Dashboard</a>
+<!-- HERO -->
+<section id="home" class="gradient-hero min-h-[70vh] flex items-center pt-20 relative">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10">
+        <div class="text-center max-w-4xl mx-auto">
+            <div class="fade-slide">
+                <div class="inline-flex items-center gap-2 bg-[#2e86c1]/10 backdrop-blur-sm px-4 py-2 rounded-full text-sm text-[#2e86c1] font-semibold mb-6 border border-[#2e86c1]/20">
+                    <span class="w-2.5 h-2.5 bg-[#2e86c1] rounded-full animate-pulse"></span> AI-Powered Enhancement
                 </div>
-                <div class="flex items-center gap-3">
-                    <button onclick="document.getElementById('upload').scrollIntoView({behavior:'smooth'})" class="px-5 py-2 rounded-full btn-primary text-white font-semibold text-sm shadow-lg">
-                        <i class="fas fa-upload mr-1.5"></i> Upload
+                <h1 class="text-4xl md:text-7xl font-extrabold text-white leading-[1.05]">
+                    <span class="text-[#2e86c1]">AI</span> Photo Enhancement
+                </h1>
+                <p class="text-gray-300 text-lg md:text-xl mt-4 max-w-2xl mx-auto leading-relaxed">
+                    Upload your photo and we'll professionally enhance it using advanced AI technology.
+                </p>
+                <div class="flex flex-wrap justify-center gap-4 mt-8">
+                    <button onclick="document.getElementById('upload').scrollIntoView({behavior:'smooth'})" class="px-8 py-4 rounded-full btn-primary text-white font-bold shadow-lg flex items-center gap-2 text-base">
+                        <i class="fas fa-cloud-upload-alt"></i> Upload Now
+                    </button>
+                    <a href="#pricing" class="px-8 py-4 rounded-full border-2 border-[#2e86c1] text-[#2e86c1] font-bold flex items-center gap-2 text-base hover:bg-[#2e86c1] hover:text-white transition">
+                        <i class="fas fa-tag"></i> Pricing
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- PRICING -->
+<section id="pricing" class="py-20 px-4 bg-[#f0f7ff]">
+    <div class="max-w-7xl mx-auto">
+        <div class="text-center mb-14">
+            <span class="text-[#1a5276] text-sm font-semibold tracking-[0.2em] uppercase">Pricing</span>
+            <h2 class="section-title text-4xl md:text-5xl text-[#0b2b44] mt-2">Simple, Transparent Pricing</h2>
+            <p class="text-gray-500 mt-3 max-w-md mx-auto">Professional AI photo enhancement at an affordable rate</p>
+        </div>
+        <div class="max-w-md mx-auto">
+            <div class="pricing-card p-8 shadow-lg">
+                <div class="text-center">
+                    <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#1a5276] to-[#2e86c1] flex items-center justify-center text-white text-3xl mx-auto shadow-lg mb-4">
+                        <i class="fas fa-image"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-[#0b2b44]">Photo Enhancement</h3>
+                    <div class="text-5xl font-extrabold text-[#1a5276] mt-4">KSh 100</div>
+                    <p class="text-gray-500 text-sm mt-1">per photo</p>
+                    <div class="flex items-center justify-center gap-2 mt-4 text-[#1a5276]">
+                        <i class="fas fa-clock"></i>
+                        <span class="font-semibold">Delivery within 30 minutes</span>
+                    </div>
+                    <div class="mt-6 space-y-2 text-sm text-gray-600">
+                        <p><i class="fas fa-check-circle text-[#2e86c1] mr-2"></i> AI-powered enhancement</p>
+                        <p><i class="fas fa-check-circle text-[#2e86c1] mr-2"></i> Color correction & sharpening</p>
+                        <p><i class="fas fa-check-circle text-[#2e86c1] mr-2"></i> Manual quality check</p>
+                        <p><i class="fas fa-check-circle text-[#2e86c1] mr-2"></i> Delivered to your email</p>
+                    </div>
+                    <button onclick="document.getElementById('upload').scrollIntoView({behavior:'smooth'})" class="mt-8 w-full py-4 rounded-full btn-primary text-white font-bold text-lg shadow-lg transition">
+                        <i class="fas fa-upload mr-2"></i> Start Now
                     </button>
                 </div>
             </div>
         </div>
-    </nav>
+    </div>
+</section>
 
-    <!-- ===== HERO ===== -->
-    <section id="home" class="gradient-hero min-h-[70vh] flex items-center pt-20 relative">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10">
-            <div class="text-center max-w-4xl mx-auto">
-                <div class="fade-slide">
-                    <div class="inline-flex items-center gap-2 bg-[#2e86c1]/10 backdrop-blur-sm px-4 py-2 rounded-full text-sm text-[#2e86c1] font-semibold mb-6 border border-[#2e86c1]/20">
-                        <span class="w-2.5 h-2.5 bg-[#2e86c1] rounded-full animate-pulse"></span> AI-Powered Enhancement
-                    </div>
-                    <h1 class="text-4xl md:text-7xl font-extrabold text-white leading-[1.05]">
-                        <span class="text-[#2e86c1]">AI</span> Photo Enhancement
-                    </h1>
-                    <p class="text-gray-300 text-lg md:text-xl mt-4 max-w-2xl mx-auto leading-relaxed">
-                        Upload your photo and we'll professionally enhance it using advanced AI technology.
-                    </p>
-                    <div class="flex flex-wrap justify-center gap-4 mt-8">
-                        <button onclick="document.getElementById('upload').scrollIntoView({behavior:'smooth'})" class="px-8 py-4 rounded-full btn-primary text-white font-bold shadow-lg flex items-center gap-2 text-base">
-                            <i class="fas fa-cloud-upload-alt"></i> Upload Now
-                        </button>
-                        <a href="#pricing" class="px-8 py-4 rounded-full border-2 border-[#2e86c1] text-[#2e86c1] font-bold flex items-center gap-2 text-base hover:bg-[#2e86c1] hover:text-white transition">
-                            <i class="fas fa-tag"></i> Pricing
-                        </a>
-                    </div>
-                </div>
-            </div>
+<!-- UPLOAD -->
+<section id="upload" class="py-20 px-4 bg-white">
+    <div class="max-w-4xl mx-auto">
+        <div class="text-center mb-14">
+            <span class="text-[#1a5276] text-sm font-semibold tracking-[0.2em] uppercase">Upload</span>
+            <h2 class="section-title text-4xl md:text-5xl text-[#0b2b44] mt-2">Upload Your Photo</h2>
+            <p class="text-gray-500 mt-3">Drag & drop or click to select your image</p>
         </div>
-    </section>
 
-    <!-- ===== PRICING ===== -->
-    <section id="pricing" class="py-20 px-4 bg-[#f0f7ff]">
-        <div class="max-w-7xl mx-auto">
-            <div class="text-center mb-14">
-                <span class="text-[#1a5276] text-sm font-semibold tracking-[0.2em] uppercase">Pricing</span>
-                <h2 class="section-title text-4xl md:text-5xl text-[#0b2b44] mt-2">Simple, Transparent Pricing</h2>
-                <p class="text-gray-500 mt-3 max-w-md mx-auto">Professional AI photo enhancement at an affordable rate</p>
-            </div>
-            <div class="max-w-md mx-auto">
-                <div class="pricing-card p-8 shadow-lg">
-                    <div class="text-center">
-                        <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#1a5276] to-[#2e86c1] flex items-center justify-center text-white text-3xl mx-auto shadow-lg mb-4">
-                            <i class="fas fa-image"></i>
-                        </div>
-                        <h3 class="text-2xl font-bold text-[#0b2b44]">Photo Enhancement</h3>
-                        <div class="text-5xl font-extrabold text-[#1a5276] mt-4">KSh 100</div>
-                        <p class="text-gray-500 text-sm mt-1">per photo</p>
-                        <div class="flex items-center justify-center gap-2 mt-4 text-[#1a5276]">
-                            <i class="fas fa-clock"></i>
-                            <span class="font-semibold">Delivery within 30 minutes</span>
-                        </div>
-                        <div class="mt-6 space-y-2 text-sm text-gray-600">
-                            <p><i class="fas fa-check-circle text-[#2e86c1] mr-2"></i> AI-powered enhancement</p>
-                            <p><i class="fas fa-check-circle text-[#2e86c1] mr-2"></i> Color correction & sharpening</p>
-                            <p><i class="fas fa-check-circle text-[#2e86c1] mr-2"></i> Manual quality check</p>
-                            <p><i class="fas fa-check-circle text-[#2e86c1] mr-2"></i> Delivered to your email</p>
-                        </div>
-                        <button onclick="document.getElementById('upload').scrollIntoView({behavior:'smooth'})" class="mt-8 w-full py-4 rounded-full btn-primary text-white font-bold text-lg shadow-lg transition">
-                            <i class="fas fa-upload mr-2"></i> Start Now
-                        </button>
+        <div class="glass-card bg-white rounded-3xl p-8 shadow-xl border border-gray-100">
+            <div id="successMessage" class="success-message hidden mb-6">
+                <div class="flex items-start gap-3">
+                    <i class="fas fa-check-circle text-[#065f46] text-xl mt-0.5"></i>
+                    <div>
+                        <p class="font-semibold text-[#065f46]">Your photo has been received!</p>
+                        <p class="text-sm text-[#065f46]/80">Please complete payment. Once payment is confirmed, your photo will be manually enhanced and sent to your email.</p>
                     </div>
                 </div>
             </div>
-        </div>
-    </section>
 
-    <!-- ===== UPLOAD SECTION ===== -->
-    <section id="upload" class="py-20 px-4 bg-white">
-        <div class="max-w-4xl mx-auto">
-            <div class="text-center mb-14">
-                <span class="text-[#1a5276] text-sm font-semibold tracking-[0.2em] uppercase">Upload</span>
-                <h2 class="section-title text-4xl md:text-5xl text-[#0b2b44] mt-2">Upload Your Photo</h2>
-                <p class="text-gray-500 mt-3">Drag & drop or click to select your image</p>
-            </div>
-
-            <div class="glass-card bg-white rounded-3xl p-8 shadow-xl border border-gray-100">
-                <!-- Success Message -->
-                <div id="successMessage" class="success-message hidden mb-6">
-                    <div class="flex items-start gap-3">
-                        <i class="fas fa-check-circle text-[#065f46] text-xl mt-0.5"></i>
-                        <div>
-                            <p class="font-semibold text-[#065f46]">Your photo has been received!</p>
-                            <p class="text-sm text-[#065f46]/80">Please complete payment. Once payment is confirmed, your photo will be manually enhanced and sent to your email.</p>
+            <form id="uploadForm" class="space-y-6" enctype="multipart/form-data">
+                <div id="dropZone" class="drop-zone p-12 text-center cursor-pointer transition">
+                    <div class="flex flex-col items-center gap-4">
+                        <div class="w-20 h-20 rounded-full bg-[#1a5276]/10 flex items-center justify-center text-[#1a5276] text-3xl">
+                            <i class="fas fa-cloud-upload-alt"></i>
                         </div>
+                        <div>
+                            <p class="text-lg font-semibold text-[#0b2b44]">Drag & drop your image here</p>
+                            <p class="text-sm text-gray-400">or click to browse</p>
+                            <p class="text-xs text-gray-400 mt-2">Supports JPG, JPEG, PNG, WEBP (max 20MB)</p>
+                        </div>
+                        <input type="file" id="fileInput" name="photo" accept=".jpg,.jpeg,.png,.webp" class="hidden" required />
                     </div>
                 </div>
 
-                <form id="uploadForm" class="space-y-6" enctype="multipart/form-data">
-                    <!-- Drag & Drop Zone -->
-                    <div id="dropZone" class="drop-zone p-12 text-center cursor-pointer transition">
-                        <div class="flex flex-col items-center gap-4">
-                            <div class="w-20 h-20 rounded-full bg-[#1a5276]/10 flex items-center justify-center text-[#1a5276] text-3xl">
-                                <i class="fas fa-cloud-upload-alt"></i>
-                            </div>
-                            <div>
-                                <p class="text-lg font-semibold text-[#0b2b44]">Drag & drop your image here</p>
-                                <p class="text-sm text-gray-400">or click to browse</p>
-                                <p class="text-xs text-gray-400 mt-2">Supports JPG, JPEG, PNG, WEBP (max 20MB)</p>
-                            </div>
-                            <input type="file" id="fileInput" name="photo" accept=".jpg,.jpeg,.png,.webp" class="hidden" required />
-                        </div>
+                <div id="thumbnailContainer" class="hidden mt-4 flex items-center gap-4 p-4 bg-gray-50 rounded-xl">
+                    <img id="thumbnailPreview" class="thumbnail-preview" src="#" alt="Preview" />
+                    <div>
+                        <p id="fileName" class="font-semibold text-[#0b2b44]"></p>
+                        <p id="fileSize" class="text-sm text-gray-400"></p>
                     </div>
+                    <button type="button" id="removeFile" class="ml-auto text-red-500 hover:text-red-700 transition">
+                        <i class="fas fa-times-circle text-xl"></i>
+                    </button>
+                </div>
 
-                    <!-- Thumbnail Preview -->
-                    <div id="thumbnailContainer" class="hidden mt-4 flex items-center gap-4 p-4 bg-gray-50 rounded-xl">
-                        <img id="thumbnailPreview" class="thumbnail-preview" src="#" alt="Preview" />
-                        <div>
-                            <p id="fileName" class="font-semibold text-[#0b2b44]"></p>
-                            <p id="fileSize" class="text-sm text-gray-400"></p>
-                        </div>
-                        <button type="button" id="removeFile" class="ml-auto text-red-500 hover:text-red-700 transition">
-                            <i class="fas fa-times-circle text-xl"></i>
-                        </button>
-                    </div>
-
-                    <!-- Customer Fields -->
-                    <div class="grid md:grid-cols-2 gap-4">
-                        <div>
-                            <label class="text-sm font-semibold text-[#0b2b44] block mb-1">Full Name *</label>
-                            <input type="text" name="name" placeholder="John Doe" class="contact-input" required />
-                        </div>
-                        <div>
-                            <label class="text-sm font-semibold text-[#0b2b44] block mb-1">Email Address *</label>
-                            <input type="email" name="email" placeholder="john@example.com" class="contact-input" required />
-                        </div>
+                <div class="grid md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-sm font-semibold text-[#0b2b44] block mb-1">Full Name *</label>
+                        <input type="text" name="name" placeholder="John Doe" class="contact-input" required />
                     </div>
                     <div>
-                        <label class="text-sm font-semibold text-[#0b2b44] block mb-1">Phone Number</label>
-                        <input type="tel" name="phone" placeholder="+254 700 123 456" class="contact-input" />
+                        <label class="text-sm font-semibold text-[#0b2b44] block mb-1">Email Address *</label>
+                        <input type="email" name="email" placeholder="john@example.com" class="contact-input" required />
                     </div>
-
-                    <button type="submit" class="w-full py-4 rounded-xl btn-primary text-white font-bold text-lg transition shadow-lg">
-                        <i class="fas fa-upload mr-2"></i> Upload Photo
-                    </button>
-                </form>
-            </div>
-        </div>
-    </section>
-
-    <!-- ===== ADMIN DASHBOARD ===== -->
-    <section id="admin" class="py-20 px-4 bg-[#f8fafc]">
-        <div class="max-w-7xl mx-auto">
-            <div class="text-center mb-14">
-                <span class="text-[#1a5276] text-sm font-semibold tracking-[0.2em] uppercase">Dashboard</span>
-                <h2 class="section-title text-4xl md:text-5xl text-[#0b2b44] mt-2">Admin Dashboard</h2>
-                <p class="text-gray-500 mt-3">Manage orders, track status, and deliver enhanced photos</p>
-            </div>
-
-            <!-- Stats -->
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                <div class="admin-card p-6 text-center">
-                    <div class="text-3xl font-bold text-[#1a5276]" id="totalOrders">0</div>
-                    <p class="text-sm text-gray-500">Total Orders</p>
-                </div>
-                <div class="admin-card p-6 text-center">
-                    <div class="text-3xl font-bold text-[#f59e0b]" id="pendingOrders">0</div>
-                    <p class="text-sm text-gray-500">Pending</p>
-                </div>
-                <div class="admin-card p-6 text-center">
-                    <div class="text-3xl font-bold text-[#3b82f6]" id="processingOrders">0</div>
-                    <p class="text-sm text-gray-500">Processing</p>
-                </div>
-                <div class="admin-card p-6 text-center">
-                    <div class="text-3xl font-bold text-[#10b981]" id="completedOrders">0</div>
-                    <p class="text-sm text-gray-500">Completed</p>
-                </div>
-            </div>
-
-            <!-- Orders Table -->
-            <div class="admin-card p-6 shadow-sm overflow-x-auto">
-                <h3 class="text-lg font-bold text-[#0b2b44] mb-4">All Orders</h3>
-                <table class="admin-table w-full text-sm">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Customer</th>
-                            <th>Email</th>
-                            <th>Phone</th>
-                            <th>Photo</th>
-                            <th>Status</th>
-                            <th>Enhanced</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="ordersBody">
-                        <!-- Rows inserted by JavaScript -->
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </section>
-
-    <!-- ===== FOOTER ===== -->
-    <footer class="bg-[#0b2b44] text-white/50 pt-12 pb-6 px-4 border-t border-white/5">
-        <div class="max-w-7xl mx-auto">
-            <div class="grid md:grid-cols-3 gap-8">
-                <div>
-                    <div class="flex items-center gap-3 mb-3">
-                        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#1a5276] to-[#2e86c1] flex items-center justify-center text-white text-lg"><i class="fas fa-crown"></i></div>
-                        <span class="text-xl font-bold text-white">Apex<span class="text-[#2e86c1]">Built</span></span>
-                    </div>
-                    <p class="text-sm leading-relaxed text-gray-400 max-w-xs">Professional AI photo enhancement and construction services.</p>
                 </div>
                 <div>
-                    <h4 class="text-white font-semibold text-base mb-3">Quick Links</h4>
-                    <ul class="space-y-1.5 text-sm">
-                        <li><a href="#home" class="hover:text-[#2e86c1] transition">Home</a></li>
-                        <li><a href="#pricing" class="hover:text-[#2e86c1] transition">Pricing</a></li>
-                        <li><a href="#upload" class="hover:text-[#2e86c1] transition">Upload</a></li>
-                        <li><a href="#admin" class="hover:text-[#2e86c1] transition">Dashboard</a></li>
-                    </ul>
+                    <label class="text-sm font-semibold text-[#0b2b44] block mb-1">Phone Number</label>
+                    <input type="tel" name="phone" placeholder="+254 700 123 456" class="contact-input" />
                 </div>
-                <div>
-                    <h4 class="text-white font-semibold text-base mb-3">Contact</h4>
-                    <ul class="space-y-2 text-sm">
-                        <li class="flex items-start gap-3"><i class="fas fa-phone text-[#2e86c1] mt-1"></i><span>+254 700 123 456</span></li>
-                        <li class="flex items-start gap-3"><i class="fas fa-envelope text-[#2e86c1] mt-1"></i><span>hello@apexbuilt.com</span></li>
-                        <li class="flex items-start gap-3"><i class="fas fa-map-pin text-[#2e86c1] mt-1"></i><span>Nairobi, Kenya</span></li>
-                    </ul>
+
+                <button type="submit" class="w-full py-4 rounded-xl btn-primary text-white font-bold text-lg transition shadow-lg">
+                    <i class="fas fa-upload mr-2"></i> Upload Photo
+                </button>
+            </form>
+        </div>
+    </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="bg-[#0b2b44] text-white/50 pt-12 pb-6 px-4 border-t border-white/5">
+    <div class="max-w-7xl mx-auto">
+        <div class="grid md:grid-cols-3 gap-8">
+            <div>
+                <div class="flex items-center gap-3 mb-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#1a5276] to-[#2e86c1] flex items-center justify-center text-white text-lg"><i class="fas fa-crown"></i></div>
+                    <span class="text-xl font-bold text-white">Apex<span class="text-[#2e86c1]">Built</span></span>
                 </div>
+                <p class="text-sm leading-relaxed text-gray-400 max-w-xs">Professional AI photo enhancement and construction services.</p>
             </div>
-            <div class="border-t border-white/5 mt-8 pt-6 text-center text-xs text-gray-500">
-                © 2026 ApexBuilt. All rights reserved. Built with ❤️ by Calvin.
+            <div>
+                <h4 class="text-white font-semibold text-base mb-3">Quick Links</h4>
+                <ul class="space-y-1.5 text-sm">
+                    <li><a href="#home" class="hover:text-[#2e86c1] transition">Home</a></li>
+                    <li><a href="#pricing" class="hover:text-[#2e86c1] transition">Pricing</a></li>
+                    <li><a href="#upload" class="hover:text-[#2e86c1] transition">Upload</a></li>
+                    <li><a href="/admin" class="hover:text-[#2e86c1] transition">Dashboard</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="text-white font-semibold text-base mb-3">Contact</h4>
+                <ul class="space-y-2 text-sm">
+                    <li class="flex items-start gap-3"><i class="fas fa-phone text-[#2e86c1] mt-1"></i><span>+254 700 123 456</span></li>
+                    <li class="flex items-start gap-3"><i class="fas fa-envelope text-[#2e86c1] mt-1"></i><span>hello@apexbuilt.com</span></li>
+                    <li class="flex items-start gap-3"><i class="fas fa-map-pin text-[#2e86c1] mt-1"></i><span>Nairobi, Kenya</span></li>
+                </ul>
             </div>
         </div>
-    </footer>
-
-    <!-- ===== JAVASCRIPT ===== -->
-    <script>
-        // ===== DRAG & DROP =====
-        const dropZone = document.getElementById('dropZone');
-        const fileInput = document.getElementById('fileInput');
-        const thumbnailContainer = document.getElementById('thumbnailContainer');
-        const thumbnailPreview = document.getElementById('thumbnailPreview');
-        const fileName = document.getElementById('fileName');
-        const fileSize = document.getElementById('fileSize');
-        const removeFileBtn = document.getElementById('removeFile');
-
-        let selectedFile = null;
-
-        dropZone.addEventListener('click', () => fileInput.click());
-
-        dropZone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            dropZone.classList.add('drag-over');
-        });
-
-        dropZone.addEventListener('dragleave', () => {
-            dropZone.classList.remove('drag-over');
-        });
-
-        dropZone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            dropZone.classList.remove('drag-over');
-            if (e.dataTransfer.files.length > 0) {
-                handleFile(e.dataTransfer.files[0]);
-            }
-        });
-
-        fileInput.addEventListener('change', (e) => {
-            if (e.target.files.length > 0) {
-                handleFile(e.target.files[0]);
-            }
-        });
-
-        function handleFile(file) {
-            const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
-            if (!validTypes.includes(file.type)) {
-                alert('Please upload a JPG, JPEG, PNG, or WEBP image.');
-                return;
-            }
-            if (file.size > 20 * 1024 * 1024) {
-                alert('File size must be less than 20MB.');
-                return;
-            }
-            selectedFile = file;
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                thumbnailPreview.src = e.target.result;
-                fileName.textContent = file.name;
-                fileSize.textContent = (file.size / 1024 / 1024).toFixed(2) + ' MB';
-                thumbnailContainer.classList.remove('hidden');
-                dropZone.classList.add('hidden');
-            };
-            reader.readAsDataURL(file);
-        }
-
-        removeFileBtn.addEventListener('click', () => {
-            selectedFile = null;
-            thumbnailContainer.classList.add('hidden');
-            dropZone.classList.remove('hidden');
-            fileInput.value = '';
-        });
-
-        // ===== FORM SUBMIT =====
-        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            if (!selectedFile) {
-                alert('Please select a photo to upload.');
-                return;
-            }
-
-            const formData = new FormData();
-            formData.append('photo', selectedFile);
-            formData.append('name', document.querySelector('input[name="name"]').value);
-            formData.append('email', document.querySelector('input[name="email"]').value);
-            formData.append('phone', document.querySelector('input[name="phone"]').value);
-
-            // Simulate upload
-            const submitBtn = e.target.querySelector('button[type="submit"]');
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Uploading...';
-
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 1500));
-
-            // Generate random order ID
-            const orderId = 'ORD-' + Date.now().toString().slice(-6);
-
-            // Add to table
-            const customerName = document.querySelector('input[name="name"]').value;
-            const customerEmail = document.querySelector('input[name="email"]').value;
-            const customerPhone = document.querySelector('input[name="phone"]').value || '—';
-
-            addOrderToTable(orderId, customerName, customerEmail, customerPhone, selectedFile.name);
-
-            // Show success message
-            document.getElementById('successMessage').classList.remove('hidden');
-            document.getElementById('successMessage').scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-            // Reset form
-            selectedFile = null;
-            thumbnailContainer.classList.add('hidden');
-            dropZone.classList.remove('hidden');
-            fileInput.value = '';
-            document.querySelector('input[name="name"]').value = '';
-            document.querySelector('input[name="email"]').value = '';
-            document.querySelector('input[name="phone"]').value = '';
-
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = '<i class="fas fa-upload mr-2"></i> Upload Photo';
-
-            updateStats();
-        });
-
-        // ===== ADMIN TABLE =====
-        let orders = [];
-        let orderCounter = 1;
-
-        function addOrderToTable(id, name, email, phone, photoName) {
-            const order = {
-                id: id,
-                name: name,
-                email: email,
-                phone: phone,
-                photo: photoName,
-                status: 'pending',
-                enhanced: '—'
-            };
-            orders.push(order);
-            renderOrders();
-            updateStats();
-        }
-
-        function renderOrders() {
-            const tbody = document.getElementById('ordersBody');
-            if (orders.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="8" class="text-center py-8 text-gray-400">
-                            <i class="fas fa-inbox text-2xl block mb-2"></i>
-                            No orders yet
-                        </td>
-                    </tr>
-                `;
-                return;
-            }
-
-            tbody.innerHTML = orders.map((order, index) => `
-                <tr>
-                    <td class="font-medium text-[#0b2b44]">${index + 1}</td>
-                    <td class="font-medium">${order.name}</td>
-                    <td class="text-gray-600">${order.email}</td>
-                    <td class="text-gray-600">${order.phone}</td>
-                    <td>
-                        <span class="text-xs bg-gray-100 px-2 py-1 rounded">${order.photo}</span>
-                    </td>
-                    <td>
-                        <span class="status-badge status-${order.status}">${order.status.charAt(0).toUpperCase() + order.status.slice(1)}</span>
-                    </td>
-                    <td>
-                        ${order.enhanced !== '—' 
-                            ? `<span class="text-xs text-[#10b981]"><i class="fas fa-check-circle mr-1"></i> Delivered</span>`
-                            : `<span class="text-xs text-gray-400">—</span>`
-                        }
-                    </td>
-                    <td>
-                        <div class="flex gap-2 flex-wrap">
-                            ${order.status === 'pending' ? `
-                                <button onclick="updateStatus('${order.id}', 'processing')" class="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-full hover:bg-blue-200 transition">
-                                    Process
-                                </button>
-                            ` : ''}
-                            ${order.status === 'processing' ? `
-                                <button onclick="completeOrder('${order.id}')" class="text-xs bg-green-100 text-green-700 px-3 py-1 rounded-full hover:bg-green-200 transition">
-                                    Complete
-                                </button>
-                            ` : ''}
-                            ${order.status === 'completed' ? `
-                                <span class="text-xs text-green-600 font-medium"><i class="fas fa-check-circle"></i> Done</span>
-                            ` : ''}
-                        </div>
-                    </td>
-                </tr>
-            `).join('');
-        }
-
-        function updateStatus(id, newStatus) {
-            const order = orders.find(o => o.id === id);
-            if (order) {
-                order.status = newStatus;
-                renderOrders();
-                updateStats();
-                // Simulate email notification
-                if (newStatus === 'processing') {
-                    alert(`📧 Order ${id} is now Processing. Customer will be notified.`);
-                }
-            }
-        }
-
-        function completeOrder(id) {
-            const order = orders.find(o => o.id === id);
-            if (order) {
-                order.status = 'completed';
-                order.enhanced = 'Enhanced_' + order.photo;
-                renderOrders();
-                updateStats();
-                alert(`✅ Order ${id} completed!\n📧 Enhanced photo would be emailed to ${order.email} (simulated).`);
-            }
-        }
-
-        function updateStats() {
-            document.getElementById('totalOrders').textContent = orders.length;
-            document.getElementById('pendingOrders').textContent = orders.filter(o => o.status === 'pending').length;
-            document.getElementById('processingOrders').textContent = orders.filter(o => o.status === 'processing').length;
-            document.getElementById('completedOrders').textContent = orders.filter(o => o.status === 'completed').length;
-        }
-
-        // ===== SMOOTH SCROLL =====
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function(e) {
-                e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            });
-        });
-
-        // Navbar scroll effect
-        window.addEventListener('scroll', () => {
-            const nav = document.querySelector('nav .glass-card');
-            if (window.scrollY > 40) {
-                nav.style.background = 'rgba(11, 43, 68, 0.92)';
-                nav.style.borderColor = 'rgba(46, 134, 193, 0.2)';
-            } else {
-                nav.style.background = 'rgba(255,255,255,0.05)';
-                nav.style.borderColor = 'rgba(255,255,255,0.05)';
-            }
-        });
-
-        // Seed some sample orders for demo
-        setTimeout(() => {
-            addOrderToTable('ORD-1001', 'Alice Mwangi', 'alice@example.com', '+254 712 345 678', 'family_photo.jpg');
-            addOrderToTable('ORD-1002', 'Brian Ochieng', 'brian@example.com', '+254 723 456 789', 'wedding_001.png');
-            // Update first order to processing for demo
-            setTimeout(() => {
-                if (orders.length > 0) {
-                    orders[0].status = 'processing';
-                    renderOrders();
-                    updateStats();
-                }
-            }, 500);
-        }, 500);
-    </script>
-
-</body>
-</html>
+        <div class="border-t border-white/5 mt-8 pt-6 text-center text-xs text-gray-500">
+            © 2026 ApexBuilt. All rights reserved.
+        </div>
+    </div>
+</footer>
+{% endblock %}
