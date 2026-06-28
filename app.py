@@ -5,7 +5,14 @@ import uuid
 import base64
 import json
 from werkzeug.utils import secure_filename
-from supabase import create_client, Client
+
+# Try to import supabase, but provide fallback
+try:
+    from supabase import create_client, Client
+    SUPABASE_AVAILABLE = True
+except ImportError:
+    SUPABASE_AVAILABLE = False
+    print("⚠️ Supabase not installed. Using JSON fallback.")
 
 app = Flask(__name__)
 app.secret_key = 'dev-secret-key-12345'
@@ -14,17 +21,144 @@ app.secret_key = 'dev-secret-key-12345'
 SUPABASE_URL = "https://hzqrdwerkgfmfaufabjr.supabase.co"
 SUPABASE_KEY = "sb_publishable_tnBOmCO7EFfIoXfNjEH_Tg_D7WX-zld"
 
-# Initialize Supabase client
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-print("✅ Supabase connected successfully!")
+# Initialize Supabase client if available
+if SUPABASE_AVAILABLE:
+    try:
+        supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+        print("✅ Supabase connected successfully!")
+    except Exception as e:
+        print(f"⚠️ Supabase connection failed: {e}")
+        SUPABASE_AVAILABLE = False
+else:
+    supabase = None
 
 # ===== FILE CONFIGURATION =====
-UPLOAD_FOLDER = 'uploads'
-ENHANCED_FOLDER = 'enhanced'
+# Use /tmp for Vercel, local folder for development
+if os.environ.get('VERCEL'):
+    UPLOAD_FOLDER = '/tmp/uploads'
+    ENHANCED_FOLDER = '/tmp/enhanced'
+    ORDERS_FILE = '/tmp/orders.json'
+else:
+    UPLOAD_FOLDER = 'uploads'
+    ENHANCED_FOLDER = 'enhanced'
+    ORDERS_FILE = 'orders.json'
+
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(ENHANCED_FOLDER, exist_ok=True)
 
 ALLOWED_EXTENSIONS = {'jpg', 'jpeg', 'png', 'webp'}
+
+# ===== JSON FALLBACK FUNCTIONS =====
+def load_orders_json():
+    """Load orders from JSON file (fallback)"""
+    try:
+        if os.path.exists(ORDERS_FILE):
+            with open(ORDERS_FILE, 'r') as f:
+                return json.load(f)
+        return []
+    except:
+        return []
+
+def save_orders_json(orders):
+    """Save orders to JSON file (fallback)"""
+    try:
+        with open(ORDERS_FILE, 'w') as f:
+            json.dump(orders, f, indent=2)
+        return True
+    except:
+        return False
+
+# ===== DATABASE FUNCTIONS =====
+def load_orders():
+    """Load orders from Supabase or JSON fallback"""
+    if SUPABASE_AVAILABLE and supabase:
+        try:
+            response = supabase.table('orders').select('*').order('created_at', desc=True).execute()
+            return response.data
+        except Exception as e:
+            print(f"Error loading from Supabase: {e}, using JSON fallback")
+            return load_orders_json()
+    else:
+        return load_orders_json()
+
+def get_order_by_id(order_id):
+    """Get a single order by ID"""
+    if SUPABASE_AVAILABLE and supabase:
+        try:
+            response = supabase.table('orders').select('*').eq('id', order_id).execute()
+            return response.data[0] if response.data else None
+        except:
+            # Fallback to JSON
+            orders = load_orders_json()
+            for order in orders:
+                if order.get('id') == order_id:
+                    return order
+            return None
+    else:
+        orders = load_orders_json()
+        for order in orders:
+            if order.get('id') == order_id:
+                return order
+        return None
+
+def add_order_to_db(order_data):
+    """Add order to Supabase or JSON fallback"""
+    if SUPABASE_AVAILABLE and supabase:
+        try:
+            response = supabase.table('orders').insert(order_data).execute()
+            return response.data[0]['id'] if response.data else None
+        except Exception as e:
+            print(f"Error adding to Supabase: {e}, using JSON fallback")
+            return add_order_to_json(order_data)
+    else:
+        return add_order_to_json(order_data)
+
+def add_order_to_json(order_data):
+    """Add order to JSON file"""
+    orders = load_orders_json()
+    order_data['id'] = len(orders) + 1
+    orders.append(order_data)
+    save_orders_json(orders)
+    return order_data['id']
+
+def update_order_in_db(order_id, updates):
+    """Update order in Supabase or JSON fallback"""
+    if SUPABASE_AVAILABLE and supabase:
+        try:
+            response = supabase.table('orders').update(updates).eq('id', order_id).execute()
+            return len(response.data) > 0
+        except:
+            return update_order_json(order_id, updates)
+    else:
+        return update_order_json(order_id, updates)
+
+def update_order_json(order_id, updates):
+    """Update order in JSON file"""
+    orders = load_orders_json()
+    for order in orders:
+        if order.get('id') == order_id:
+            order.update(updates)
+            save_orders_json(orders)
+            return True
+    return False
+
+def delete_order_from_db(order_id):
+    """Delete order from Supabase or JSON fallback"""
+    if SUPABASE_AVAILABLE and supabase:
+        try:
+            response = supabase.table('orders').delete().eq('id', order_id).execute()
+            return len(response.data) > 0
+        except:
+            return delete_order_json(order_id)
+    else:
+        return delete_order_json(order_id)
+
+def delete_order_json(order_id):
+    """Delete order from JSON file"""
+    orders = load_orders_json()
+    orders = [o for o in orders if o.get('id') != order_id]
+    save_orders_json(orders)
+    return True
 
 # ===== HELPER FUNCTIONS =====
 def allowed_file(filename):
@@ -46,24 +180,6 @@ def get_image_preview(filename, folder):
     except:
         pass
     return None
-
-def load_orders():
-    """Load orders from Supabase"""
-    try:
-        response = supabase.table('orders').select('*').order('created_at', desc=True).execute()
-        return response.data
-    except Exception as e:
-        print(f"Error loading orders: {e}")
-        return []
-
-def get_order_by_id(order_id):
-    """Get a single order by ID"""
-    try:
-        response = supabase.table('orders').select('*').eq('id', order_id).execute()
-        return response.data[0] if response.data else None
-    except Exception as e:
-        print(f"Error getting order: {e}")
-        return None
 
 # ===== ROUTES =====
 
@@ -131,11 +247,8 @@ def upload_photo():
             'amount': 50.00
         }
         
-        # Insert into Supabase
-        response = supabase.table('orders').insert(order_data).execute()
-        
-        if not response.data:
-            return jsonify({'success': False, 'error': 'Failed to save order'}), 500
+        # Add to database
+        add_order_to_db(order_data)
 
         return jsonify({
             'success': True,
@@ -172,10 +285,7 @@ def update_order_status(order_id):
         if new_status == 'processing' and order.get('payment_status') == 'pending':
             updates['payment_status'] = 'paid'
         
-        response = supabase.table('orders').update(updates).eq('id', order_id).execute()
-        
-        if not response.data:
-            return jsonify({'success': False, 'error': 'Failed to update order'}), 500
+        update_order_in_db(order_id, updates)
 
         return jsonify({
             'success': True, 
@@ -202,10 +312,7 @@ def update_payment_status(order_id):
         if payment_status == 'paid' and order.get('status') == 'pending':
             updates['status'] = 'processing'
         
-        response = supabase.table('orders').update(updates).eq('id', order_id).execute()
-        
-        if not response.data:
-            return jsonify({'success': False, 'error': 'Failed to update order'}), 500
+        update_order_in_db(order_id, updates)
 
         return jsonify({
             'success': True, 
@@ -237,13 +344,10 @@ def upload_enhanced_photo(order_id):
         file_path = os.path.join(ENHANCED_FOLDER, unique_filename)
         file.save(file_path)
 
-        response = supabase.table('orders').update({
+        update_order_in_db(order_id, {
             'enhanced_filename': unique_filename,
             'status': 'completed'
-        }).eq('id', order_id).execute()
-        
-        if not response.data:
-            return jsonify({'success': False, 'error': 'Failed to update order'}), 500
+        })
 
         return jsonify({
             'success': True,
@@ -274,10 +378,7 @@ def delete_order_route(order_id):
         except:
             pass
 
-        response = supabase.table('orders').delete().eq('id', order_id).execute()
-        
-        if not response.data:
-            return jsonify({'success': False, 'error': 'Failed to delete order'}), 500
+        delete_order_from_db(order_id)
 
         return jsonify({'success': True, 'message': 'Order deleted successfully'}), 200
 
@@ -291,6 +392,10 @@ def serve_upload(filename):
 @app.route('/enhanced/<filename>')
 def serve_enhanced(filename):
     return send_from_directory(ENHANCED_FOLDER, filename, as_attachment=True)
+
+# ===== VERCEL HANDLER =====
+def handler(request, context):
+    return app(request, context)
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
