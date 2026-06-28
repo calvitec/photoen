@@ -6,9 +6,9 @@ import base64
 import json
 from werkzeug.utils import secure_filename
 
-# Try to import supabase, but provide fallback
+# Try to import supabase
 try:
-    from supabase import create_client, Client
+    from supabase import create_client
     SUPABASE_AVAILABLE = True
 except ImportError:
     SUPABASE_AVAILABLE = False
@@ -21,34 +21,25 @@ app.secret_key = 'dev-secret-key-12345'
 SUPABASE_URL = "https://hzqrdwerkgfmfaufabjr.supabase.co"
 SUPABASE_KEY = "sb_publishable_tnBOmCO7EFfIoXfNjEH_Tg_D7WX-zld"
 
-# Initialize Supabase client if available
-DB_STATUS = {
-    'connected': False,
-    'type': 'json',
-    'error': None,
-    'tables': []
-}
+# Initialize Supabase
+DB_STATUS = {'connected': False, 'type': 'json', 'error': None}
 
 if SUPABASE_AVAILABLE:
     try:
         supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-        # Test connection by trying to query
-        test_response = supabase.table('orders').select('count', count='exact').limit(1).execute()
+        # Test connection
+        test = supabase.table('orders').select('count', count='exact').limit(1).execute()
         DB_STATUS['connected'] = True
         DB_STATUS['type'] = 'supabase'
-        DB_STATUS['tables'] = ['orders']
         print("✅ Supabase connected successfully!")
     except Exception as e:
-        print(f"⚠️ Supabase connection failed: {e}")
-        SUPABASE_AVAILABLE = False
         DB_STATUS['error'] = str(e)
+        print(f"⚠️ Supabase error: {e}")
 else:
     supabase = None
-    DB_STATUS['type'] = 'json'
     print("📁 Using JSON file storage")
 
 # ===== FILE CONFIGURATION =====
-# Use /tmp for Vercel, local folder for development
 if os.environ.get('VERCEL'):
     UPLOAD_FOLDER = '/tmp/uploads'
     ENHANCED_FOLDER = '/tmp/enhanced'
@@ -63,9 +54,18 @@ os.makedirs(ENHANCED_FOLDER, exist_ok=True)
 
 ALLOWED_EXTENSIONS = {'jpg', 'jpeg', 'png', 'webp'}
 
-# ===== JSON FALLBACK FUNCTIONS =====
+# ===== DATABASE FUNCTIONS =====
+def load_orders():
+    """Load orders from Supabase or JSON"""
+    if SUPABASE_AVAILABLE and DB_STATUS['connected']:
+        try:
+            response = supabase.table('orders').select('*').order('created_at', desc=True).execute()
+            return response.data
+        except:
+            return load_orders_json()
+    return load_orders_json()
+
 def load_orders_json():
-    """Load orders from JSON file (fallback)"""
     try:
         if os.path.exists(ORDERS_FILE):
             with open(ORDERS_FILE, 'r') as f:
@@ -75,7 +75,6 @@ def load_orders_json():
         return []
 
 def save_orders_json(orders):
-    """Save orders to JSON file (fallback)"""
     try:
         with open(ORDERS_FILE, 'w') as f:
             json.dump(orders, f, indent=2)
@@ -83,88 +82,48 @@ def save_orders_json(orders):
     except:
         return False
 
-# ===== DATABASE FUNCTIONS =====
-def load_orders():
-    """Load orders from Supabase or JSON fallback"""
-    if SUPABASE_AVAILABLE and supabase:
-        try:
-            response = supabase.table('orders').select('*').order('created_at', desc=True).execute()
-            data = response.data
-            # Ensure all orders have necessary fields
-            for order in data:
-                if 'created_at' not in order:
-                    order['created_at'] = datetime.utcnow().isoformat()
-                if 'status' not in order:
-                    order['status'] = 'pending'
-                if 'payment_status' not in order:
-                    order['payment_status'] = 'pending'
-            return data
-        except Exception as e:
-            print(f"Error loading from Supabase: {e}, using JSON fallback")
-            return load_orders_json()
-    else:
-        return load_orders_json()
-
 def get_order_by_id(order_id):
-    """Get a single order by ID"""
-    if SUPABASE_AVAILABLE and supabase:
+    if SUPABASE_AVAILABLE and DB_STATUS['connected']:
         try:
             response = supabase.table('orders').select('*').eq('id', order_id).execute()
-            if response.data:
-                order = response.data[0]
-                if 'created_at' not in order:
-                    order['created_at'] = datetime.utcnow().isoformat()
-                return order
-            return None
+            return response.data[0] if response.data else None
         except:
-            # Fallback to JSON
-            orders = load_orders_json()
-            for order in orders:
-                if order.get('id') == order_id:
-                    return order
-            return None
-    else:
-        orders = load_orders_json()
-        for order in orders:
-            if order.get('id') == order_id:
-                return order
-        return None
+            return get_order_json(order_id)
+    return get_order_json(order_id)
 
-def add_order_to_db(order_data):
-    """Add order to Supabase or JSON fallback"""
-    if SUPABASE_AVAILABLE and supabase:
+def get_order_json(order_id):
+    orders = load_orders_json()
+    for order in orders:
+        if order.get('id') == order_id:
+            return order
+    return None
+
+def add_order(order_data):
+    if SUPABASE_AVAILABLE and DB_STATUS['connected']:
         try:
             response = supabase.table('orders').insert(order_data).execute()
             return response.data[0]['id'] if response.data else None
-        except Exception as e:
-            print(f"Error adding to Supabase: {e}, using JSON fallback")
-            return add_order_to_json(order_data)
-    else:
-        return add_order_to_json(order_data)
+        except:
+            return add_order_json(order_data)
+    return add_order_json(order_data)
 
-def add_order_to_json(order_data):
-    """Add order to JSON file"""
+def add_order_json(order_data):
     orders = load_orders_json()
-    if 'created_at' not in order_data:
-        order_data['created_at'] = datetime.utcnow().isoformat()
     order_data['id'] = len(orders) + 1
     orders.append(order_data)
     save_orders_json(orders)
     return order_data['id']
 
-def update_order_in_db(order_id, updates):
-    """Update order in Supabase or JSON fallback"""
-    if SUPABASE_AVAILABLE and supabase:
+def update_order(order_id, updates):
+    if SUPABASE_AVAILABLE and DB_STATUS['connected']:
         try:
             response = supabase.table('orders').update(updates).eq('id', order_id).execute()
             return len(response.data) > 0
         except:
             return update_order_json(order_id, updates)
-    else:
-        return update_order_json(order_id, updates)
+    return update_order_json(order_id, updates)
 
 def update_order_json(order_id, updates):
-    """Update order in JSON file"""
     orders = load_orders_json()
     for order in orders:
         if order.get('id') == order_id:
@@ -173,19 +132,16 @@ def update_order_json(order_id, updates):
             return True
     return False
 
-def delete_order_from_db(order_id):
-    """Delete order from Supabase or JSON fallback"""
-    if SUPABASE_AVAILABLE and supabase:
+def delete_order(order_id):
+    if SUPABASE_AVAILABLE and DB_STATUS['connected']:
         try:
             response = supabase.table('orders').delete().eq('id', order_id).execute()
             return len(response.data) > 0
         except:
             return delete_order_json(order_id)
-    else:
-        return delete_order_json(order_id)
+    return delete_order_json(order_id)
 
 def delete_order_json(order_id):
-    """Delete order from JSON file"""
     orders = load_orders_json()
     orders = [o for o in orders if o.get('id') != order_id]
     save_orders_json(orders)
@@ -199,7 +155,6 @@ def generate_order_id():
     return 'ORD-' + str(uuid.uuid4().hex[:8]).upper()
 
 def get_image_preview(filename, folder):
-    """Get base64 encoded image preview"""
     try:
         file_path = os.path.join(folder, filename)
         if os.path.exists(file_path):
@@ -222,17 +177,9 @@ def index():
 def admin():
     try:
         orders = load_orders()
-        # Add preview URLs and ensure all fields exist
         for order in orders:
             if 'created_at' not in order:
                 order['created_at'] = datetime.utcnow().isoformat()
-            if 'status' not in order:
-                order['status'] = 'pending'
-            if 'payment_status' not in order:
-                order['payment_status'] = 'pending'
-            if 'amount' not in order:
-                order['amount'] = 50.00
-            
             order['original_preview'] = get_image_preview(order.get('stored_filename', ''), UPLOAD_FOLDER)
             if order.get('enhanced_filename'):
                 order['enhanced_preview'] = get_image_preview(order['enhanced_filename'], ENHANCED_FOLDER)
@@ -248,47 +195,24 @@ def admin():
         }
         return render_template('admin.html', orders=orders, stats=stats, db_status=DB_STATUS)
     except Exception as e:
-        print(f"Error in admin route: {e}")
         return f"<h1>Error loading admin</h1><p>{str(e)}</p>", 500
 
 @app.route('/api/status')
 def api_status():
-    """API endpoint to check database status"""
     return jsonify({
-        'status': 'ok',
         'database': DB_STATUS,
+        'orders': len(load_orders()),
         'timestamp': datetime.utcnow().isoformat()
     })
 
 @app.route('/api/test-db')
 def test_db():
-    """Test database connection and return details"""
     result = {
-        'supabase_available': SUPABASE_AVAILABLE,
         'connected': DB_STATUS['connected'],
         'type': DB_STATUS['type'],
         'error': DB_STATUS.get('error'),
-        'orders_count': 0,
-        'sample_orders': []
+        'orders_count': len(load_orders())
     }
-    
-    if SUPABASE_AVAILABLE and supabase:
-        try:
-            # Get count of orders
-            count_response = supabase.table('orders').select('count', count='exact').execute()
-            result['orders_count'] = count_response.count if hasattr(count_response, 'count') else 0
-            
-            # Get sample orders
-            sample_response = supabase.table('orders').select('*').limit(3).execute()
-            result['sample_orders'] = sample_response.data
-        except Exception as e:
-            result['error'] = str(e)
-    else:
-        # JSON fallback
-        orders = load_orders_json()
-        result['orders_count'] = len(orders)
-        result['sample_orders'] = orders[:3]
-    
     return jsonify(result)
 
 @app.route('/api/upload', methods=['POST'])
@@ -332,14 +256,9 @@ def upload_photo():
             'created_at': datetime.utcnow().isoformat()
         }
         
-        # Add to database
-        add_order_to_db(order_data)
+        add_order(order_data)
 
-        return jsonify({
-            'success': True,
-            'message': 'Photo uploaded successfully',
-            'order_id': order_id
-        }), 200
+        return jsonify({'success': True, 'message': 'Photo uploaded successfully', 'order_id': order_id}), 200
 
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -347,10 +266,6 @@ def upload_photo():
 @app.route('/api/orders', methods=['GET'])
 def get_orders():
     orders = load_orders()
-    for order in orders:
-        order['original_preview'] = get_image_preview(order.get('stored_filename', ''), UPLOAD_FOLDER)
-        if order.get('enhanced_filename'):
-            order['enhanced_preview'] = get_image_preview(order['enhanced_filename'], ENHANCED_FOLDER)
     return jsonify({'orders': orders}), 200
 
 @app.route('/api/orders/<int:order_id>/status', methods=['PUT'])
@@ -370,12 +285,9 @@ def update_order_status(order_id):
         if new_status == 'processing' and order.get('payment_status') == 'pending':
             updates['payment_status'] = 'paid'
         
-        update_order_in_db(order_id, updates)
+        update_order(order_id, updates)
 
-        return jsonify({
-            'success': True, 
-            'message': f'Status updated to {new_status}'
-        }), 200
+        return jsonify({'success': True, 'message': f'Status updated to {new_status}'}), 200
 
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -397,12 +309,9 @@ def update_payment_status(order_id):
         if payment_status == 'paid' and order.get('status') == 'pending':
             updates['status'] = 'processing'
         
-        update_order_in_db(order_id, updates)
+        update_order(order_id, updates)
 
-        return jsonify({
-            'success': True, 
-            'message': f'Payment status updated to {payment_status}'
-        }), 200
+        return jsonify({'success': True, 'message': f'Payment status updated to {payment_status}'}), 200
 
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -429,16 +338,12 @@ def upload_enhanced_photo(order_id):
         file_path = os.path.join(ENHANCED_FOLDER, unique_filename)
         file.save(file_path)
 
-        update_order_in_db(order_id, {
+        update_order(order_id, {
             'enhanced_filename': unique_filename,
             'status': 'completed'
         })
 
-        return jsonify({
-            'success': True,
-            'message': 'Enhanced photo uploaded successfully',
-            'enhanced_filename': unique_filename
-        }), 200
+        return jsonify({'success': True, 'message': 'Enhanced photo uploaded successfully'}), 200
 
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -450,12 +355,11 @@ def delete_order_route(order_id):
         if not order:
             return jsonify({'success': False, 'error': 'Order not found'}), 404
 
-        # Delete files if they exist
+        # Delete files
         try:
             original_path = os.path.join(UPLOAD_FOLDER, order['stored_filename'])
             if os.path.exists(original_path):
                 os.remove(original_path)
-            
             if order.get('enhanced_filename'):
                 enhanced_path = os.path.join(ENHANCED_FOLDER, order['enhanced_filename'])
                 if os.path.exists(enhanced_path):
@@ -463,7 +367,7 @@ def delete_order_route(order_id):
         except:
             pass
 
-        delete_order_from_db(order_id)
+        delete_order(order_id)
 
         return jsonify({'success': True, 'message': 'Order deleted successfully'}), 200
 
@@ -486,7 +390,7 @@ if __name__ == '__main__':
     print("\n" + "="*50)
     print("🚀 APEXBUILT PHOTO ENHANCEMENT")
     print("="*50)
-    print(f"📁 Database Type: {DB_STATUS['type']}")
+    print(f"📁 Database: {DB_STATUS['type']}")
     print(f"🔗 Connected: {'✅' if DB_STATUS['connected'] else '❌'}")
     if DB_STATUS.get('error'):
         print(f"⚠️ Error: {DB_STATUS['error']}")
