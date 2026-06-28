@@ -42,8 +42,8 @@ if SUPABASE_AVAILABLE:
         print(f"❌ Supabase connection failed: {error_msg}")
         print("📁 Falling back to JSON storage")
 else:
-    print("⚠️ Supabase library not installed. Using JSON storage.")
-    print("📁 To use Supabase, run: pip install supabase")
+    supabase = None
+    print("📁 Using JSON file storage (Supabase not installed)")
 
 # ===== FILE CONFIGURATION =====
 if os.environ.get('VERCEL'):
@@ -224,7 +224,8 @@ def test_db():
         'error': DB_STATUS.get('error'),
         'orders_count': len(load_orders()),
         'supabase_available': SUPABASE_AVAILABLE,
-        'url': SUPABASE_URL
+        'url': SUPABASE_URL,
+        'message': '✅ Supabase connected!' if DB_STATUS['connected'] else '📁 Using JSON storage'
     }
     return jsonify(result)
 
@@ -407,9 +408,11 @@ if __name__ == '__main__':
     if DB_STATUS.get('error'):
         print(f"⚠️ Error: {DB_STATUS['error']}")
     print("="*60)
-    print("\n💡 To fix Supabase connection:")
-    print("   1. Check your SUPABASE_URL and SUPABASE_KEY")
-    print("   2. Make sure the 'orders' table exists")
-    print("   3. Check your internet connection")
-    print("   4. Run: pip install supabase\n")
+    print("\n💡 Current Status:")
+    if DB_STATUS['connected']:
+        print("   ✅ Using Supabase - Data is persistent!")
+    else:
+        print("   📁 Using JSON storage - Data saved locally")
+        print("   🔧 To use Supabase, install: pip install supabase")
+    print("")
     app.run(debug=True, host='0.0.0.0', port=5000)
