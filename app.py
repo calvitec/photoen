@@ -2,46 +2,36 @@ from flask import Flask, request, jsonify, render_template, send_file, send_from
 from datetime import datetime
 import os
 import uuid
-import json
 import base64
 from werkzeug.utils import secure_filename
+from supabase import create_client, Client
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = 'dev-secret-key-12345'
 
 # ===== CONFIGURATION =====
-if os.environ.get('VERCEL'):
-    UPLOAD_FOLDER = '/tmp/uploads'
-    ENHANCED_FOLDER = '/tmp/enhanced'
-    ORDERS_FILE = '/tmp/orders.json'
-else:
-    UPLOAD_FOLDER = 'uploads'
-    ENHANCED_FOLDER = 'enhanced'
-    ORDERS_FILE = 'orders.json'
-
+UPLOAD_FOLDER = 'uploads'
+ENHANCED_FOLDER = 'enhanced'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(ENHANCED_FOLDER, exist_ok=True)
 
 ALLOWED_EXTENSIONS = {'jpg', 'jpeg', 'png', 'webp'}
 
+# ===== SUPABASE CONFIGURATION =====
+SUPABASE_URL = os.environ.get('SUPABASE_URL')
+SUPABASE_KEY = os.environ.get('SUPABASE_KEY')
+
+if not SUPABASE_URL or not SUPABASE_KEY:
+    print("⚠️ Warning: Supabase credentials not found. Using local storage.")
+    supabase = None
+else:
+    supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+    print("✅ Supabase connected successfully!")
+
 # ===== HELPER FUNCTIONS =====
-def load_orders():
-    try:
-        if os.path.exists(ORDERS_FILE):
-            with open(ORDERS_FILE, 'r') as f:
-                return json.load(f)
-        return []
-    except:
-        return []
-
-def save_orders(orders):
-    try:
-        with open(ORDERS_FILE, 'w') as f:
-            json.dump(orders, f, indent=2)
-        return True
-    except:
-        return False
-
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
@@ -61,6 +51,86 @@ def get_image_preview(filename, folder):
     except:
         pass
     return None
+
+# ===== SUPABASE DATABASE FUNCTIONS =====
+def load_orders():
+    """Load orders from Supabase"""
+    if not supabase:
+        # Fallback to JSON file
+        try:
+            with open('orders.json', 'r') as f:
+                return json.load(f)
+        except:
+            return []
+    
+    try:
+        response = supabase.table('orders').select('*').order('created_at', desc=True).execute()
+        return response.data
+    except Exception as e:
+        print(f"Error loading orders from Supabase: {e}")
+        return []
+
+def add_order(order_data):
+    """Add a new order to Supabase"""
+    if not supabase:
+        # Fallback to JSON file
+        try:
+            import json
+            orders = []
+            try:
+                with open('orders.json', 'r') as f:
+                    orders = json.load(f)
+            except:
+                pass
+            orders.append(order_data)
+            with open('orders.json', 'w') as f:
+                json.dump(orders, f, indent=2)
+            return len(orders)
+        except:
+            return None
+    
+    try:
+        response = supabase.table('orders').insert(order_data).execute()
+        return response.data[0]['id'] if response.data else None
+    except Exception as e:
+        print(f"Error adding order to Supabase: {e}")
+        return None
+
+def update_order(order_id, updates):
+    """Update an order in Supabase"""
+    if not supabase:
+        return False
+    
+    try:
+        response = supabase.table('orders').update(updates).eq('id', order_id).execute()
+        return len(response.data) > 0
+    except Exception as e:
+        print(f"Error updating order in Supabase: {e}")
+        return False
+
+def delete_order_from_db(order_id):
+    """Delete an order from Supabase"""
+    if not supabase:
+        return False
+    
+    try:
+        response = supabase.table('orders').delete().eq('id', order_id).execute()
+        return len(response.data) > 0
+    except Exception as e:
+        print(f"Error deleting order from Supabase: {e}")
+        return False
+
+def get_order_by_id(order_id):
+    """Get a single order by ID"""
+    if not supabase:
+        return None
+    
+    try:
+        response = supabase.table('orders').select('*').eq('id', order_id).execute()
+        return response.data[0] if response.data else None
+    except Exception as e:
+        print(f"Error getting order: {e}")
+        return None
 
 # ===== ROUTES =====
 
@@ -84,7 +154,7 @@ def admin():
         'completed': len([o for o in orders if o['status'] == 'completed']),
         'paid': len([o for o in orders if o['payment_status'] == 'paid']),
         'unpaid': len([o for o in orders if o['payment_status'] == 'pending']),
-        'revenue': sum([o.get('amount', 100) for o in orders if o['payment_status'] == 'paid'])
+        'revenue': sum([float(o.get('amount', 50)) for o in orders if o['payment_status'] == 'paid'])
     }
     return render_template('admin.html', orders=orders, stats=stats)
 
@@ -114,26 +184,42 @@ def upload_photo():
         file.save(file_path)
 
         order_id = generate_order_id()
-        orders = load_orders()
         
-        new_order = {
-            'id': len(orders) + 1,
+        order_data = {
             'order_id': order_id,
             'customer_name': customer_name,
             'customer_email': customer_email,
-            'customer_phone': customer_phone,
+            'customer_phone': customer_phone or '',
             'original_filename': original_filename,
             'stored_filename': unique_filename,
             'enhanced_filename': None,
             'status': 'pending',
             'payment_status': 'pending',
-            'amount': 100.00,
-            'created_at': datetime.utcnow().isoformat(),
-            'updated_at': datetime.utcnow().isoformat()
+            'amount': 50.00
         }
         
-        orders.append(new_order)
-        save_orders(orders)
+        # Add to Supabase
+        if supabase:
+            try:
+                response = supabase.table('orders').insert(order_data).execute()
+                if not response.data:
+                    raise Exception("Failed to insert order")
+                order_id_db = response.data[0]['id']
+            except Exception as e:
+                return jsonify({'success': False, 'error': f'Database error: {str(e)}'}), 500
+        else:
+            # Fallback to JSON
+            import json
+            orders = []
+            try:
+                with open('orders.json', 'r') as f:
+                    orders = json.load(f)
+            except:
+                pass
+            order_data['id'] = len(orders) + 1
+            orders.append(order_data)
+            with open('orders.json', 'w') as f:
+                json.dump(orders, f, indent=2)
 
         return jsonify({
             'success': True,
@@ -162,24 +248,21 @@ def update_order_status(order_id):
         if new_status not in ['pending', 'processing', 'completed']:
             return jsonify({'success': False, 'error': 'Invalid status'}), 400
 
-        orders = load_orders()
-        order = next((o for o in orders if o['id'] == order_id), None)
-        
+        order = get_order_by_id(order_id)
         if not order:
             return jsonify({'success': False, 'error': 'Order not found'}), 404
 
-        order['status'] = new_status
-        order['updated_at'] = datetime.utcnow().isoformat()
+        updates = {'status': new_status}
+        if new_status == 'processing' and order.get('payment_status') == 'pending':
+            updates['payment_status'] = 'paid'
         
-        if new_status == 'processing' and order['payment_status'] == 'pending':
-            order['payment_status'] = 'paid'
-        
-        save_orders(orders)
+        success = update_order(order_id, updates)
+        if not success:
+            return jsonify({'success': False, 'error': 'Failed to update order'}), 500
 
         return jsonify({
             'success': True, 
-            'message': f'Status updated to {new_status}',
-            'order': order
+            'message': f'Status updated to {new_status}'
         }), 200
 
     except Exception as e:
@@ -194,24 +277,21 @@ def update_payment_status(order_id):
         if payment_status not in ['pending', 'paid']:
             return jsonify({'success': False, 'error': 'Invalid payment status'}), 400
 
-        orders = load_orders()
-        order = next((o for o in orders if o['id'] == order_id), None)
-        
+        order = get_order_by_id(order_id)
         if not order:
             return jsonify({'success': False, 'error': 'Order not found'}), 404
 
-        order['payment_status'] = payment_status
-        order['updated_at'] = datetime.utcnow().isoformat()
+        updates = {'payment_status': payment_status}
+        if payment_status == 'paid' and order.get('status') == 'pending':
+            updates['status'] = 'processing'
         
-        if payment_status == 'paid' and order['status'] == 'pending':
-            order['status'] = 'processing'
-        
-        save_orders(orders)
+        success = update_order(order_id, updates)
+        if not success:
+            return jsonify({'success': False, 'error': 'Failed to update order'}), 500
 
         return jsonify({
             'success': True, 
-            'message': f'Payment status updated to {payment_status}',
-            'order': order
+            'message': f'Payment status updated to {payment_status}'
         }), 200
 
     except Exception as e:
@@ -230,9 +310,7 @@ def upload_enhanced_photo(order_id):
         if not allowed_file(file.filename):
             return jsonify({'success': False, 'error': 'File type not allowed'}), 400
 
-        orders = load_orders()
-        order = next((o for o in orders if o['id'] == order_id), None)
-        
+        order = get_order_by_id(order_id)
         if not order:
             return jsonify({'success': False, 'error': 'Order not found'}), 404
 
@@ -241,30 +319,31 @@ def upload_enhanced_photo(order_id):
         file_path = os.path.join(ENHANCED_FOLDER, unique_filename)
         file.save(file_path)
 
-        order['enhanced_filename'] = unique_filename
-        order['status'] = 'completed'
-        order['updated_at'] = datetime.utcnow().isoformat()
-        save_orders(orders)
+        success = update_order(order_id, {
+            'enhanced_filename': unique_filename,
+            'status': 'completed'
+        })
+        
+        if not success:
+            return jsonify({'success': False, 'error': 'Failed to update order'}), 500
 
         return jsonify({
             'success': True,
             'message': 'Enhanced photo uploaded successfully',
-            'enhanced_filename': unique_filename,
-            'download_url': f'/enhanced/{unique_filename}'
+            'enhanced_filename': unique_filename
         }), 200
 
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/orders/<int:order_id>', methods=['DELETE'])
-def delete_order(order_id):
+def delete_order_route(order_id):
     try:
-        orders = load_orders()
-        order = next((o for o in orders if o['id'] == order_id), None)
-        
+        order = get_order_by_id(order_id)
         if not order:
             return jsonify({'success': False, 'error': 'Order not found'}), 404
 
+        # Delete files if they exist
         try:
             original_path = os.path.join(UPLOAD_FOLDER, order['stored_filename'])
             if os.path.exists(original_path):
@@ -277,8 +356,9 @@ def delete_order(order_id):
         except:
             pass
 
-        orders = [o for o in orders if o['id'] != order_id]
-        save_orders(orders)
+        success = delete_order_from_db(order_id)
+        if not success:
+            return jsonify({'success': False, 'error': 'Failed to delete order'}), 500
 
         return jsonify({'success': True, 'message': 'Order deleted successfully'}), 200
 
