@@ -5,67 +5,29 @@ import uuid
 import base64
 import json
 from werkzeug.utils import secure_filename
-from dotenv import load_dotenv
 
-# Load environment variables
-load_dotenv()
+app = Flask(__name__)
+app.secret_key = 'dev-secret-key-12345'
+
+# ===== SUPABASE CONFIGURATION =====
+SUPABASE_URL = "https://hzqrdwerkgfmfaufabjr.supabase.co"
+SUPABASE_KEY = "sb_publishable_tnBOmCO7EFfIoXfNjEH_Tg_D7WX-zld"
 
 # Try to import supabase
 try:
     from supabase import create_client
-    SUPABASE_AVAILABLE = True
-except ImportError:
-    SUPABASE_AVAILABLE = False
-    print("⚠️ Supabase not installed. Run: pip install supabase")
-
-app = Flask(__name__)
-
-# ===== CONFIGURATION FROM ENV =====
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-12345')
-app.config['DEBUG'] = os.environ.get('DEBUG', 'False') == 'True'
-
-# App Settings
-APP_NAME = os.environ.get('APP_NAME', 'ApexBuilt')
-APP_PHONE = os.environ.get('APP_PHONE', '+254 745 793 27')
-APP_EMAIL = os.environ.get('APP_EMAIL', 'hello@apexbuilt.com')
-APP_LOCATION = os.environ.get('APP_LOCATION', 'Nairobi, Kenya')
-
-# ===== SUPABASE CONFIGURATION =====
-SUPABASE_URL = os.environ.get('SUPABASE_URL')
-SUPABASE_KEY = os.environ.get('SUPABASE_KEY')
-
-# Initialize Supabase with proper error handling
-DB_STATUS = {'connected': False, 'type': 'json', 'error': None}
-
-if SUPABASE_AVAILABLE and SUPABASE_URL and SUPABASE_KEY:
-    try:
-        print(f"🔗 Connecting to Supabase: {SUPABASE_URL[:30]}...")
-        supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-        
-        # Test the connection with a simple query
-        test_response = supabase.table('orders').select('count', count='exact').limit(1).execute()
-        
-        DB_STATUS['connected'] = True
-        DB_STATUS['type'] = 'supabase'
-        print("✅ Supabase connected successfully!")
-        
-    except Exception as e:
-        error_msg = str(e)
-        DB_STATUS['error'] = error_msg
-        print(f"❌ Supabase connection failed: {error_msg}")
-        print("📁 Falling back to JSON storage")
-else:
+    supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+    DB_CONNECTED = True
+    DB_TYPE = 'supabase'
+    print("✅ Supabase connected!")
+except Exception as e:
     supabase = None
-    if not SUPABASE_AVAILABLE:
-        print("⚠️ Supabase library not installed")
-    if not SUPABASE_URL:
-        print("⚠️ SUPABASE_URL not set in environment variables")
-    if not SUPABASE_KEY:
-        print("⚠️ SUPABASE_KEY not set in environment variables")
-    print("📁 Using JSON file storage")
+    DB_CONNECTED = False
+    DB_TYPE = 'json'
+    print(f"⚠️ Supabase error: {e}")
+    print("📁 Using JSON storage")
 
 # ===== FILE CONFIGURATION =====
-# Use /tmp for Vercel, local folder for development
 if os.environ.get('VERCEL'):
     UPLOAD_FOLDER = '/tmp/uploads'
     ENHANCED_FOLDER = '/tmp/enhanced'
@@ -81,15 +43,33 @@ os.makedirs(ENHANCED_FOLDER, exist_ok=True)
 ALLOWED_EXTENSIONS = {'jpg', 'jpeg', 'png', 'webp'}
 
 # ===== DATABASE FUNCTIONS =====
+def get_orders_from_supabase():
+    """Get orders from Supabase"""
+    try:
+        response = supabase.table('orders').select('*').order('created_at', desc=True).execute()
+        return response.data
+    except Exception as e:
+        print(f"Supabase error: {e}")
+        return None
+
+def save_order_to_supabase(order_data):
+    """Save order to Supabase"""
+    try:
+        response = supabase.table('orders').insert(order_data).execute()
+        return response.data[0]['id'] if response.data else None
+    except Exception as e:
+        print(f"Supabase save error: {e}")
+        return None
+
 def load_orders():
     """Load orders from Supabase or JSON"""
-    if SUPABASE_AVAILABLE and DB_STATUS['connected']:
+    if DB_CONNECTED:
         try:
-            response = supabase.table('orders').select('*').order('created_at', desc=True).execute()
-            return response.data
-        except Exception as e:
-            print(f"⚠️ Error loading from Supabase: {e}")
-            return load_orders_json()
+            orders = get_orders_from_supabase()
+            if orders is not None:
+                return orders
+        except:
+            pass
     return load_orders_json()
 
 def load_orders_json():
@@ -110,15 +90,12 @@ def save_orders_json(orders):
         return False
 
 def get_order_by_id(order_id):
-    if SUPABASE_AVAILABLE and DB_STATUS['connected']:
+    if DB_CONNECTED:
         try:
             response = supabase.table('orders').select('*').eq('id', order_id).execute()
             return response.data[0] if response.data else None
         except:
-            return get_order_json(order_id)
-    return get_order_json(order_id)
-
-def get_order_json(order_id):
+            pass
     orders = load_orders_json()
     for order in orders:
         if order.get('id') == order_id:
@@ -126,18 +103,16 @@ def get_order_json(order_id):
     return None
 
 def add_order(order_data):
-    if SUPABASE_AVAILABLE and DB_STATUS['connected']:
+    if DB_CONNECTED:
         try:
-            response = supabase.table('orders').insert(order_data).execute()
-            if response.data:
+            order_id = save_order_to_supabase(order_data)
+            if order_id:
                 print(f"✅ Order saved to Supabase: {order_data['order_id']}")
-                return response.data[0]['id']
-        except Exception as e:
-            print(f"⚠️ Error saving to Supabase: {e}")
-            return add_order_json(order_data)
-    return add_order_json(order_data)
-
-def add_order_json(order_data):
+                return order_id
+        except:
+            pass
+    
+    # Fallback to JSON
     orders = load_orders_json()
     order_data['id'] = len(orders) + 1
     orders.append(order_data)
@@ -146,15 +121,15 @@ def add_order_json(order_data):
     return order_data['id']
 
 def update_order(order_id, updates):
-    if SUPABASE_AVAILABLE and DB_STATUS['connected']:
+    if DB_CONNECTED:
         try:
             response = supabase.table('orders').update(updates).eq('id', order_id).execute()
-            return len(response.data) > 0
+            if response.data:
+                return True
         except:
-            return update_order_json(order_id, updates)
-    return update_order_json(order_id, updates)
-
-def update_order_json(order_id, updates):
+            pass
+    
+    # Fallback to JSON
     orders = load_orders_json()
     for order in orders:
         if order.get('id') == order_id:
@@ -164,15 +139,15 @@ def update_order_json(order_id, updates):
     return False
 
 def delete_order(order_id):
-    if SUPABASE_AVAILABLE and DB_STATUS['connected']:
+    if DB_CONNECTED:
         try:
             response = supabase.table('orders').delete().eq('id', order_id).execute()
-            return len(response.data) > 0
+            if response.data:
+                return True
         except:
-            return delete_order_json(order_id)
-    return delete_order_json(order_id)
-
-def delete_order_json(order_id):
+            pass
+    
+    # Fallback to JSON
     orders = load_orders_json()
     orders = [o for o in orders if o.get('id') != order_id]
     save_orders_json(orders)
@@ -202,12 +177,7 @@ def get_image_preview(filename, folder):
 
 @app.route('/')
 def index():
-    return render_template('index.html', 
-        app_name=APP_NAME,
-        app_phone=APP_PHONE,
-        app_email=APP_EMAIL,
-        app_location=APP_LOCATION
-    )
+    return render_template('index.html')
 
 @app.route('/admin')
 def admin():
@@ -229,38 +199,26 @@ def admin():
             'unpaid': len([o for o in orders if o.get('payment_status') == 'pending']),
             'revenue': sum([float(o.get('amount', 50)) for o in orders if o.get('payment_status') == 'paid'])
         }
-        return render_template('admin.html', 
-            orders=orders, 
-            stats=stats, 
-            db_status=DB_STATUS,
-            app_name=APP_NAME,
-            app_phone=APP_PHONE,
-            app_email=APP_EMAIL
-        )
+        return render_template('admin.html', orders=orders, stats=stats, db_connected=DB_CONNECTED, db_type=DB_TYPE)
     except Exception as e:
         return f"<h1>Error loading admin</h1><p>{str(e)}</p>", 500
 
 @app.route('/api/status')
 def api_status():
     return jsonify({
-        'database': DB_STATUS,
+        'database_connected': DB_CONNECTED,
+        'database_type': DB_TYPE,
         'orders': len(load_orders()),
-        'timestamp': datetime.utcnow().isoformat(),
-        'app_name': APP_NAME,
-        'environment': 'production' if os.environ.get('VERCEL') else 'development'
+        'timestamp': datetime.utcnow().isoformat()
     })
 
 @app.route('/api/test-db')
 def test_db():
     result = {
-        'connected': DB_STATUS['connected'],
-        'type': DB_STATUS['type'],
-        'error': DB_STATUS.get('error'),
+        'connected': DB_CONNECTED,
+        'type': DB_TYPE,
         'orders_count': len(load_orders()),
-        'supabase_available': SUPABASE_AVAILABLE,
-        'supabase_url_configured': bool(SUPABASE_URL),
-        'supabase_key_configured': bool(SUPABASE_KEY),
-        'message': '✅ Connected to Supabase!' if DB_STATUS['connected'] else '📁 Using JSON storage'
+        'message': '✅ Connected to Supabase!' if DB_CONNECTED else '📁 Using JSON storage'
     }
     return jsonify(result)
 
@@ -436,19 +394,9 @@ def handler(request, context):
 
 if __name__ == '__main__':
     print("\n" + "="*60)
-    print(f"🚀 {APP_NAME} PHOTO ENHANCEMENT")
+    print("🚀 APEXBUILT PHOTO ENHANCEMENT")
     print("="*60)
-    print(f"📱 Phone: {APP_PHONE}")
-    print(f"📧 Email: {APP_EMAIL}")
-    print(f"📍 Location: {APP_LOCATION}")
-    print("-"*60)
-    print(f"📁 Database Type: {DB_STATUS['type']}")
-    print(f"🔗 Connected: {'✅ YES' if DB_STATUS['connected'] else '❌ NO'}")
-    if DB_STATUS.get('error'):
-        print(f"⚠️ Error: {DB_STATUS['error']}")
+    print(f"📁 Database: {DB_TYPE}")
+    print(f"🔗 Connected: {'✅ YES' if DB_CONNECTED else '❌ NO'}")
     print("="*60)
-    print("\n💡 Environment Variables:")
-    print(f"   SUPABASE_URL: {'✅ Set' if SUPABASE_URL else '❌ Not Set'}")
-    print(f"   SUPABASE_KEY: {'✅ Set' if SUPABASE_KEY else '❌ Not Set'}")
-    print("="*60 + "\n")
-    app.run(debug=app.config['DEBUG'], host='0.0.0.0', port=5000)
+    app.run(debug=True, host='0.0.0.0', port=5000)
