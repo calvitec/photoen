@@ -17,52 +17,18 @@
             padding: 24px;
             text-align: center;
         }
-        .admin-card:hover {
-            box-shadow: 0 8px 25px rgba(0,0,0,0.06);
-        }
-        .status-badge {
-            padding: 4px 14px;
-            border-radius: 20px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            display: inline-block;
-        }
+        .admin-card:hover { box-shadow: 0 8px 25px rgba(0,0,0,0.06); transform: translateY(-2px); }
+        .status-badge { padding: 4px 14px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; display: inline-block; }
         .status-pending { background: #fef3c7; color: #92400e; }
         .status-processing { background: #dbeafe; color: #1e40af; }
         .status-completed { background: #d1fae5; color: #065f46; }
-        .admin-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.875rem;
-        }
-        .admin-table th {
-            background: #f8fafc;
-            font-weight: 600;
-            color: #1e293b;
-            padding: 12px 16px;
-            text-align: left;
-            border-bottom: 2px solid #e2e8f0;
-        }
-        .admin-table td {
-            padding: 12px 16px;
-            border-bottom: 1px solid #f1f5f9;
-            vertical-align: middle;
-        }
-        .admin-table tr:hover {
-            background: #f8fafc;
-        }
-        .btn-action {
-            padding: 4px 12px;
-            border-radius: 9999px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            border: none;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-        .btn-action:hover {
-            transform: translateY(-1px);
-        }
+        .admin-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+        .admin-table th { background: #f8fafc; font-weight: 600; color: #1e293b; padding: 12px 16px; text-align: left; border-bottom: 2px solid #e2e8f0; }
+        .admin-table td { padding: 12px 16px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+        .admin-table tr:hover { background: #f8fafc; }
+        .admin-table tr:nth-child(even) { background: #fafafa; }
+        .btn-action { padding: 4px 12px; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; border: none; cursor: pointer; transition: all 0.2s ease; }
+        .btn-action:hover { transform: translateY(-1px); }
         .btn-process { background: #dbeafe; color: #1e40af; }
         .btn-process:hover { background: #bfdbfe; }
         .btn-complete { background: #d1fae5; color: #065f46; }
@@ -71,67 +37,48 @@
         .btn-paid:hover { background: #ddd6fe; }
         .btn-view { background: #f3f4f6; color: #374151; }
         .btn-view:hover { background: #e5e7eb; }
-        .modal-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.5);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 50;
-            padding: 16px;
-        }
-        .modal-content {
-            background: white;
-            border-radius: 16px;
-            padding: 32px;
-            max-width: 448px;
-            width: 100%;
-            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
-        }
-        .drop-zone-enhanced {
-            border: 2px dashed #1a5276;
-            border-radius: 12px;
-            padding: 32px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        .drop-zone-enhanced:hover {
-            background: rgba(26, 82, 118, 0.05);
-        }
-        .stat-number {
-            font-size: 2rem;
-            font-weight: 700;
-        }
+        .btn-delete { background: #fee2e2; color: #dc2626; }
+        .btn-delete:hover { background: #fecaca; }
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 50; padding: 16px; }
+        .modal-content { background: white; border-radius: 16px; padding: 32px; max-width: 448px; width: 100%; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); }
+        .drop-zone-enhanced { border: 2px dashed #1a5276; border-radius: 12px; padding: 32px; text-align: center; cursor: pointer; transition: all 0.3s ease; }
+        .drop-zone-enhanced:hover { background: rgba(26, 82, 118, 0.05); }
+        .stat-number { font-size: 2rem; font-weight: 700; }
+        .stat-icon { font-size: 1.5rem; margin-bottom: 4px; }
+        .empty-state { text-align: center; padding: 60px 20px; color: #9ca3af; }
+        .empty-state i { font-size: 3rem; margin-bottom: 16px; opacity: 0.5; }
         @media (max-width: 768px) {
             .admin-table { font-size: 0.75rem; }
             .admin-table th, .admin-table td { padding: 8px 10px; }
             .status-badge { font-size: 0.65rem; padding: 2px 10px; }
             .stat-number { font-size: 1.5rem; }
+            .admin-card { padding: 16px; }
         }
     </style>
 </head>
 <body>
     <!-- Admin Nav -->
-    <nav style="background:#0b2b44; color:white; padding:16px; box-shadow:0 10px 15px -3px rgba(0,0,0,0.1);">
+    <nav style="background:#0b2b44; color:white; padding:16px 24px; box-shadow:0 10px 15px -3px rgba(0,0,0,0.1); position:sticky; top:0; z-index:40;">
         <div style="max-width:1280px; margin:0 auto; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:16px;">
             <div style="display:flex; align-items:center; gap:16px;">
                 <a href="/" style="display:flex; align-items:center; gap:8px; text-decoration:none; color:white;">
-                    <div style="width:32px; height:32px; border-radius:8px; background:linear-gradient(135deg, #1a5276, #2e86c1); display:flex; align-items:center; justify-content:center; color:white; font-size:0.875rem;">
+                    <div style="width:40px; height:40px; border-radius:10px; background:linear-gradient(135deg, #1a5276, #2e86c1); display:flex; align-items:center; justify-content:center; color:white; font-size:1.125rem;">
                         <i class="fas fa-crown"></i>
                     </div>
-                    <span style="font-size:1.125rem; font-weight:700;">Apex<span style="color:#2e86c1;">Built</span></span>
+                    <span style="font-size:1.25rem; font-weight:700;">Apex<span style="color:#2e86c1;">Built</span></span>
                 </a>
-                <span style="font-size:0.875rem; color:#9ca3af;">| Admin Dashboard</span>
+                <span style="font-size:0.875rem; color:#9ca3af; background:rgba(255,255,255,0.1); padding:4px 12px; border-radius:20px;">Admin</span>
             </div>
-            <div style="display:flex; align-items:center; gap:16px;">
-                <a href="/" style="font-size:0.875rem; color:#9ca3af; text-decoration:none; transition:color 0.3s;">
-                    <i class="fas fa-arrow-left" style="margin-right:4px;"></i> Back to Site
+            <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
+                <a href="/" style="font-size:0.875rem; color:#9ca3af; text-decoration:none; transition:color 0.3s; display:flex; align-items:center; gap:6px;">
+                    <i class="fas fa-arrow-left"></i> Back to Site
                 </a>
-                <button onclick="location.reload()" style="padding:8px 16px; border-radius:8px; background:#1a5276; color:white; font-size:0.875rem; border:none; cursor:pointer; transition:background 0.3s;">
-                    <i class="fas fa-sync-alt" style="margin-right:4px;"></i> Refresh
+                <button onclick="location.reload()" style="padding:8px 16px; border-radius:8px; background:#1a5276; color:white; font-size:0.875rem; border:none; cursor:pointer; transition:background 0.3s; display:flex; align-items:center; gap:6px;">
+                    <i class="fas fa-sync-alt"></i> Refresh
                 </button>
+                <span style="font-size:0.75rem; color:#6b7280; background:rgba(255,255,255,0.05); padding:4px 12px; border-radius:20px;">
+                    <i class="fas fa-clock"></i> {{ datetime.utcnow().strftime('%H:%M') }}
+                </span>
             </div>
         </div>
     </nav>
@@ -139,31 +86,53 @@
     <!-- Admin Content -->
     <div style="background:#f8fafc; min-height:100vh; padding:32px 16px;">
         <div style="max-width:1280px; margin:0 auto;">
-            <!-- Stats -->
-            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:16px; margin-bottom:32px;">
+            <!-- Stats Cards -->
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:16px; margin-bottom:32px;">
                 <div class="admin-card">
-                    <div class="stat-number" style="color:#1a5276;" id="totalOrders">{{ orders|length }}</div>
+                    <div class="stat-icon" style="color:#1a5276;"><i class="fas fa-shopping-cart"></i></div>
+                    <div class="stat-number" style="color:#1a5276;">{{ stats.total }}</div>
                     <p style="font-size:0.875rem; color:#6b7280;">Total Orders</p>
                 </div>
                 <div class="admin-card">
-                    <div class="stat-number" style="color:#f59e0b;" id="pendingOrders">{{ orders|selectattr('status', 'equalto', 'pending')|list|length }}</div>
+                    <div class="stat-icon" style="color:#f59e0b;"><i class="fas fa-clock"></i></div>
+                    <div class="stat-number" style="color:#f59e0b;">{{ stats.pending }}</div>
                     <p style="font-size:0.875rem; color:#6b7280;">Pending</p>
                 </div>
                 <div class="admin-card">
-                    <div class="stat-number" style="color:#3b82f6;" id="processingOrders">{{ orders|selectattr('status', 'equalto', 'processing')|list|length }}</div>
+                    <div class="stat-icon" style="color:#3b82f6;"><i class="fas fa-spinner"></i></div>
+                    <div class="stat-number" style="color:#3b82f6;">{{ stats.processing }}</div>
                     <p style="font-size:0.875rem; color:#6b7280;">Processing</p>
                 </div>
                 <div class="admin-card">
-                    <div class="stat-number" style="color:#10b981;" id="completedOrders">{{ orders|selectattr('status', 'equalto', 'completed')|list|length }}</div>
+                    <div class="stat-icon" style="color:#10b981;"><i class="fas fa-check-circle"></i></div>
+                    <div class="stat-number" style="color:#10b981;">{{ stats.completed }}</div>
                     <p style="font-size:0.875rem; color:#6b7280;">Completed</p>
+                </div>
+                <div class="admin-card">
+                    <div class="stat-icon" style="color:#8b5cf6;"><i class="fas fa-credit-card"></i></div>
+                    <div class="stat-number" style="color:#8b5cf6;">{{ stats.paid }}</div>
+                    <p style="font-size:0.875rem; color:#6b7280;">Paid</p>
+                </div>
+                <div class="admin-card">
+                    <div class="stat-icon" style="color:#059669;"><i class="fas fa-coins"></i></div>
+                    <div class="stat-number" style="color:#059669;">KSh {{ stats.revenue }}</div>
+                    <p style="font-size:0.875rem; color:#6b7280;">Revenue</p>
                 </div>
             </div>
 
             <!-- Orders Table -->
             <div style="background:white; border-radius:16px; padding:24px; box-shadow:0 1px 3px 0 rgba(0,0,0,0.1); border:1px solid #e2e8f0; overflow-x:auto;">
-                <h3 style="font-size:1.125rem; font-weight:700; color:#0b2b44; margin-bottom:16px; display:flex; align-items:center; gap:8px;">
-                    <i class="fas fa-list-ul" style="color:#1a5276;"></i> All Orders
-                </h3>
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
+                    <h3 style="font-size:1.125rem; font-weight:700; color:#0b2b44; display:flex; align-items:center; gap:8px;">
+                        <i class="fas fa-list-ul" style="color:#1a5276;"></i> All Orders
+                        <span style="font-size:0.75rem; font-weight:400; color:#6b7280; background:#f3f4f6; padding:2px 10px; border-radius:20px;">{{ orders|length }} total</span>
+                    </h3>
+                    <div style="display:flex; gap:8px;">
+                        <input type="text" id="searchOrders" placeholder="Search orders..." style="border:1px solid #e2e8f0; border-radius:8px; padding:6px 12px; font-size:0.875rem; width:200px;">
+                    </div>
+                </div>
+
+                {% if orders %}
                 <table class="admin-table">
                     <thead>
                         <tr>
@@ -181,14 +150,16 @@
                     </thead>
                     <tbody id="ordersBody">
                         {% for order in orders %}
-                        <tr id="order-{{ order.id }}">
+                        <tr id="order-{{ order.id }}" class="order-row">
                             <td style="font-weight:500; color:#0b2b44;">{{ loop.index }}</td>
-                            <td style="font-family:monospace; font-size:0.75rem;">{{ order.order_id }}</td>
+                            <td style="font-family:monospace; font-size:0.75rem; color:#1a5276; font-weight:600;">{{ order.order_id }}</td>
                             <td style="font-weight:500;">{{ order.customer_name }}</td>
                             <td style="color:#4b5563;">{{ order.customer_email }}</td>
                             <td style="color:#4b5563;">{{ order.customer_phone or '—' }}</td>
                             <td>
-                                <span style="font-size:0.75rem; background:#f3f4f6; padding:4px 8px; border-radius:4px;">{{ order.original_filename }}</span>
+                                <span style="font-size:0.75rem; background:#f3f4f6; padding:4px 8px; border-radius:4px; display:inline-block; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="{{ order.original_filename }}">
+                                    {{ order.original_filename }}
+                                </span>
                             </td>
                             <td>
                                 <span class="status-badge status-{{ order.status }}">
@@ -208,23 +179,23 @@
                                 {% endif %}
                             </td>
                             <td>
-                                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                                <div style="display:flex; gap:6px; flex-wrap:wrap;">
                                     {% if order.status == 'pending' %}
-                                        <button onclick="updateStatus({{ order.id }}, 'processing')" class="btn-action btn-process">
-                                            Process
+                                        <button onclick="updateStatus({{ order.id }}, 'processing')" class="btn-action btn-process" title="Start processing">
+                                            <i class="fas fa-play"></i>
                                         </button>
-                                        <button onclick="updatePayment({{ order.id }}, 'paid')" class="btn-action btn-paid">
-                                            Mark Paid
+                                        <button onclick="updatePayment({{ order.id }}, 'paid')" class="btn-action btn-paid" title="Mark as paid">
+                                            <i class="fas fa-credit-card"></i>
                                         </button>
                                     {% endif %}
                                     {% if order.status == 'processing' %}
-                                        <button onclick="openEnhanceModal({{ order.id }})" class="btn-action btn-complete">
-                                            Complete
+                                        <button onclick="openEnhanceModal({{ order.id }})" class="btn-action btn-complete" title="Upload enhanced photo">
+                                            <i class="fas fa-upload"></i>
                                         </button>
                                     {% endif %}
                                     {% if order.status == 'completed' and order.enhanced_filename %}
-                                        <a href="/enhanced/{{ order.enhanced_filename }}" target="_blank" class="btn-action btn-view" style="text-decoration:none;">
-                                            View
+                                        <a href="/enhanced/{{ order.enhanced_filename }}" target="_blank" class="btn-action btn-view" title="View enhanced photo">
+                                            <i class="fas fa-eye"></i>
                                         </a>
                                     {% endif %}
                                 </div>
@@ -233,6 +204,13 @@
                         {% endfor %}
                     </tbody>
                 </table>
+                {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-inbox"></i>
+                    <h4 style="font-size:1.125rem; font-weight:600; color:#374151;">No orders yet</h4>
+                    <p style="font-size:0.875rem;">When customers upload photos, they'll appear here</p>
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -240,16 +218,22 @@
     <!-- Upload Enhanced Modal -->
     <div id="enhanceModal" class="modal-overlay">
         <div class="modal-content">
-            <h3 style="font-size:1.25rem; font-weight:700; color:#0b2b44; margin-bottom:16px;">Upload Enhanced Photo</h3>
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+                <h3 style="font-size:1.25rem; font-weight:700; color:#0b2b44;">Upload Enhanced Photo</h3>
+                <button onclick="closeModal()" style="background:none; border:none; font-size:1.25rem; cursor:pointer; color:#6b7280;">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
             <form id="enhanceForm" enctype="multipart/form-data">
                 <input type="hidden" id="enhanceOrderId" name="order_id" />
                 <div class="drop-zone-enhanced" onclick="document.getElementById('enhanceFileInput').click()">
-                    <i class="fas fa-cloud-upload-alt" style="font-size:2rem; color:#1a5276; margin-bottom:8px;"></i>
+                    <i class="fas fa-cloud-upload-alt" style="font-size:2.5rem; color:#1a5276; margin-bottom:8px; display:block;"></i>
                     <p style="font-size:0.875rem; color:#4b5563;">Click to upload enhanced photo</p>
+                    <p style="font-size:0.75rem; color:#9ca3af; margin-top:4px;">JPG, JPEG, PNG, WEBP (max 20MB)</p>
                     <input type="file" id="enhanceFileInput" name="enhanced_photo" accept=".jpg,.jpeg,.png,.webp" style="display:none;" required />
                 </div>
                 <div id="enhancePreview" style="display:none; margin-top:16px;">
-                    <img id="enhancePreviewImg" style="width:100%; height:192px; object-fit:cover; border-radius:12px;" />
+                    <img id="enhancePreviewImg" style="width:100%; height:192px; object-fit:cover; border-radius:12px; border:2px solid #e2e8f0;" />
                 </div>
                 <div style="display:flex; gap:12px; margin-top:24px;">
                     <button type="submit" style="flex:1; padding:12px 24px; border-radius:12px; background:linear-gradient(135deg, #1a5276, #2e86c1); color:white; font-weight:700; border:none; cursor:pointer; transition:all 0.3s;">
@@ -266,9 +250,18 @@
     <script>
         let currentOrderId = null;
 
+        // Search functionality
+        document.getElementById('searchOrders')?.addEventListener('keyup', function() {
+            const searchTerm = this.value.toLowerCase();
+            const rows = document.querySelectorAll('.order-row');
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(searchTerm) ? '' : 'none';
+            });
+        });
+
         function updateStatus(orderId, status) {
             if (!confirm(`Change order ${orderId} to ${status}?`)) return;
-            
             fetch(`/api/orders/${orderId}/status`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
@@ -276,10 +269,10 @@
             })
             .then(res => res.json())
             .then(data => {
-                if (data.success) {
-                    alert('✅ ' + data.message);
-                    location.reload();
-                } else {
+                if (data.success) { 
+                    showNotification('✅ ' + data.message);
+                    setTimeout(() => location.reload(), 1500);
+                } else { 
                     alert('❌ Error: ' + data.error);
                 }
             })
@@ -288,7 +281,6 @@
 
         function updatePayment(orderId, status) {
             if (!confirm(`Mark order ${orderId} as ${status}?`)) return;
-            
             fetch(`/api/orders/${orderId}/payment`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
@@ -296,10 +288,10 @@
             })
             .then(res => res.json())
             .then(data => {
-                if (data.success) {
-                    alert('✅ ' + data.message);
-                    location.reload();
-                } else {
+                if (data.success) { 
+                    showNotification('✅ ' + data.message);
+                    setTimeout(() => location.reload(), 1500);
+                } else { 
                     alert('❌ Error: ' + data.error);
                 }
             })
@@ -333,36 +325,58 @@
             e.preventDefault();
             const formData = new FormData(this);
             const orderId = document.getElementById('enhanceOrderId').value;
-            
             const submitBtn = this.querySelector('button[type="submit"]');
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Uploading...';
-            
-            fetch(`/api/orders/${orderId}/enhance`, {
-                method: 'POST',
-                body: formData
-            })
+            fetch(`/api/orders/${orderId}/enhance`, { method: 'POST', body: formData })
             .then(res => res.json())
             .then(data => {
-                if (data.success) {
-                    alert('✅ ' + data.message);
+                if (data.success) { 
+                    showNotification('✅ ' + data.message);
                     closeModal();
-                    location.reload();
-                } else {
+                    setTimeout(() => location.reload(), 1500);
+                } else { 
                     alert('❌ Error: ' + data.error);
                 }
             })
             .catch(err => alert('Error: ' + err.message))
-            .finally(() => {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = '<i class="fas fa-upload mr-2"></i> Upload';
+            .finally(() => { 
+                submitBtn.disabled = false; 
+                submitBtn.innerHTML = '<i class="fas fa-upload mr-2"></i> Upload'; 
             });
         });
 
-        // Close modal on outside click
         document.getElementById('enhanceModal').addEventListener('click', function(e) {
             if (e.target === this) closeModal();
         });
+
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed; bottom: 20px; right: 20px; background: #1a5276; 
+                color: white; padding: 16px 24px; border-radius: 12px; 
+                box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); 
+                font-weight: 500; z-index: 9999; animation: slideIn 0.3s ease;
+                max-width: 400px;
+            `;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                notification.style.transition = 'opacity 0.3s';
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+
+        // Add slideIn animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+        `;
+        document.head.appendChild(style);
     </script>
 </body>
 </html>
