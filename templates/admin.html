@@ -85,11 +85,11 @@
             
             <!-- ===== DATABASE STATUS INDICATOR ===== -->
             <div style="margin-bottom:20px;">
-                <div class="{% if db_status.connected %}db-status-connected{% else %}db-status-disconnected{% endif %}" 
+                <div class="{% if db_connected %}db-status-connected{% else %}db-status-disconnected{% endif %}" 
                      style="border-radius:12px; padding:14px 20px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
                     <div style="display:flex; align-items:center; gap:12px;">
                         <span style="font-size:1.5rem;">
-                            {% if db_status.connected %}
+                            {% if db_connected %}
                                 <i class="fas fa-check-circle" style="color:#10b981;"></i>
                             {% else %}
                                 <i class="fas fa-exclamation-circle" style="color:#ef4444;"></i>
@@ -97,25 +97,20 @@
                         </span>
                         <div>
                             <span style="font-weight:600; color:#0b2b44;">Database Status:</span>
-                            <span style="font-weight:500; color:{% if db_status.connected %}#065f46{% else %}#991b1b{% endif %};">
-                                {% if db_status.connected %}
-                                    ✅ Connected to {{ db_status.type|capitalize }}
+                            <span style="font-weight:500; color:{% if db_connected %}#065f46{% else %}#991b1b{% endif %};">
+                                {% if db_connected %}
+                                    ✅ Connected to {{ db_type|capitalize }}
                                 {% else %}
                                     ❌ Using JSON Fallback
                                 {% endif %}
                             </span>
-                            {% if db_status.connected %}
+                            {% if db_connected %}
                                 <span style="font-size:0.75rem; color:#6b7280; margin-left:8px;">
                                     <i class="fas fa-database"></i> Orders Table
                                 </span>
                             {% else %}
                                 <span style="font-size:0.75rem; color:#991b1b; margin-left:8px;">
                                     <i class="fas fa-exclamation-triangle"></i> Data saved locally
-                                </span>
-                            {% endif %}
-                            {% if db_status.error %}
-                                <span style="font-size:0.7rem; color:#991b1b; display:block; margin-top:2px;">
-                                    ⚠️ {{ db_status.error[:100] }}
                                 </span>
                             {% endif %}
                         </div>
