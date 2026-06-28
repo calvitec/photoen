@@ -3,6 +3,7 @@ from datetime import datetime
 import os
 import uuid
 import json
+import base64
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
@@ -47,6 +48,20 @@ def allowed_file(filename):
 def generate_order_id():
     return 'ORD-' + str(uuid.uuid4().hex[:8]).upper()
 
+def get_image_preview(filename, folder):
+    """Get base64 encoded image preview"""
+    try:
+        file_path = os.path.join(folder, filename)
+        if os.path.exists(file_path):
+            with open(file_path, 'rb') as f:
+                img_data = base64.b64encode(f.read()).decode('utf-8')
+                ext = filename.rsplit('.', 1)[1].lower()
+                mime_type = 'image/jpeg' if ext in ['jpg', 'jpeg'] else 'image/png' if ext == 'png' else 'image/webp'
+                return f'data:{mime_type};base64,{img_data}'
+    except:
+        pass
+    return None
+
 # ===== ROUTES =====
 
 @app.route('/')
@@ -56,6 +71,12 @@ def index():
 @app.route('/admin')
 def admin():
     orders = load_orders()
+    # Add preview URLs
+    for order in orders:
+        order['original_preview'] = get_image_preview(order['stored_filename'], UPLOAD_FOLDER)
+        if order.get('enhanced_filename'):
+            order['enhanced_preview'] = get_image_preview(order['enhanced_filename'], ENHANCED_FOLDER)
+    
     stats = {
         'total': len(orders),
         'pending': len([o for o in orders if o['status'] == 'pending']),
@@ -126,6 +147,10 @@ def upload_photo():
 @app.route('/api/orders', methods=['GET'])
 def get_orders():
     orders = load_orders()
+    for order in orders:
+        order['original_preview'] = get_image_preview(order['stored_filename'], UPLOAD_FOLDER)
+        if order.get('enhanced_filename'):
+            order['enhanced_preview'] = get_image_preview(order['enhanced_filename'], ENHANCED_FOLDER)
     return jsonify({'orders': orders}), 200
 
 @app.route('/api/orders/<int:order_id>/status', methods=['PUT'])
@@ -146,7 +171,6 @@ def update_order_status(order_id):
         order['status'] = new_status
         order['updated_at'] = datetime.utcnow().isoformat()
         
-        # Auto-mark as paid when processing starts (realistic business logic)
         if new_status == 'processing' and order['payment_status'] == 'pending':
             order['payment_status'] = 'paid'
         
@@ -179,7 +203,6 @@ def update_payment_status(order_id):
         order['payment_status'] = payment_status
         order['updated_at'] = datetime.utcnow().isoformat()
         
-        # If payment is confirmed and status is pending, auto-start processing
         if payment_status == 'paid' and order['status'] == 'pending':
             order['status'] = 'processing'
         
@@ -235,7 +258,6 @@ def upload_enhanced_photo(order_id):
 
 @app.route('/api/orders/<int:order_id>', methods=['DELETE'])
 def delete_order(order_id):
-    """Delete an order"""
     try:
         orders = load_orders()
         order = next((o for o in orders if o['id'] == order_id), None)
@@ -243,7 +265,6 @@ def delete_order(order_id):
         if not order:
             return jsonify({'success': False, 'error': 'Order not found'}), 404
 
-        # Delete files if they exist
         try:
             original_path = os.path.join(UPLOAD_FOLDER, order['stored_filename'])
             if os.path.exists(original_path):
@@ -254,9 +275,8 @@ def delete_order(order_id):
                 if os.path.exists(enhanced_path):
                     os.remove(enhanced_path)
         except:
-            pass  # Continue even if file deletion fails
+            pass
 
-        # Remove from orders list
         orders = [o for o in orders if o['id'] != order_id]
         save_orders(orders)
 
