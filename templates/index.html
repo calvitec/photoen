@@ -346,8 +346,17 @@
         }
         .ba-card .ba-image {
             width: 100%;
-            height: 220px;
+            height: 240px;
             object-fit: cover;
+            transition: all 0.3s ease;
+        }
+        .ba-card .ba-image.before {
+            filter: blur(1.5px) brightness(0.7) contrast(0.8) saturate(0.6);
+            opacity: 0.85;
+        }
+        .ba-card .ba-image.after {
+            filter: blur(0) brightness(1.1) contrast(1.1) saturate(1.2);
+            opacity: 1;
         }
         .ba-card .ba-label {
             position: absolute;
@@ -355,10 +364,11 @@
             left: 12px;
             padding: 4px 16px;
             border-radius: 9999px;
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.05em;
+            z-index: 2;
         }
         .ba-card .ba-label.before {
             background: #fee2e2;
@@ -368,8 +378,26 @@
             background: #d1fae5;
             color: #065f46;
         }
+        .ba-card .ba-arrow {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(8px);
+            color: white;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            border: 2px solid rgba(255,255,255,0.15);
+            z-index: 3;
+        }
         .ba-card .ba-title {
-            padding: 16px 20px 12px;
+            padding: 14px 20px 6px;
             font-weight: 700;
             color: #0a1628;
             font-size: 1rem;
@@ -379,22 +407,17 @@
             font-size: 0.85rem;
             color: #6b7280;
         }
-        .ba-card .ba-arrow {
+        .ba-card .ba-badge {
             position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0,0,0,0.6);
-            backdrop-filter: blur(8px);
-            color: white;
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2rem;
-            border: 2px solid rgba(255,255,255,0.2);
+            bottom: 80px;
+            right: 12px;
+            padding: 2px 12px;
+            border-radius: 9999px;
+            font-size: 0.6rem;
+            font-weight: 600;
+            background: rgba(0,188,212,0.15);
+            color: #00bcd4;
+            border: 1px solid rgba(0,188,212,0.1);
         }
         
         /* ===== TESTIMONIALS ===== */
@@ -513,7 +536,7 @@
             .feature-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 12px; }
             .testimonial-grid { grid-template-columns: 1fr !important; }
             .ba-grid { grid-template-columns: 1fr !important; }
-            .ba-card .ba-image { height: 180px; }
+            .ba-card .ba-image { height: 200px; }
         }
         @media (max-width: 480px) {
             .pricing-sidebar .price-tag { font-size: 2rem; }
@@ -525,7 +548,7 @@
             .feature-grid .feature-card { padding: 16px 12px; }
             .feature-grid .feature-card .icon-wrap { width: 36px; height: 36px; font-size: 1rem; }
             .testimonial-card { padding: 20px 16px; }
-            .ba-card .ba-image { height: 150px; }
+            .ba-card .ba-image { height: 160px; }
         }
     </style>
 </head>
@@ -711,47 +734,56 @@
             <div style="text-align:center; margin-bottom:48px;">
                 <span style="color:#0d47a1; font-size:0.6rem; font-weight:600; letter-spacing:0.15em; text-transform:uppercase;">Samples</span>
                 <h2 style="font-size:2.2rem; font-weight:800; color:#0a1628; margin-top:4px; letter-spacing:-1px;">Before & After</h2>
-                <p style="font-size:0.95rem; color:#6b7280; margin-top:4px;">See the difference our AI enhancement makes</p>
+                <p style="font-size:0.95rem; color:#6b7280; margin-top:4px;">See the dramatic difference our AI enhancement makes</p>
             </div>
 
             <div class="ba-grid" style="display:grid; grid-template-columns:repeat(3, 1fr); gap:24px;">
-                <!-- Sample 1 -->
+                <!-- Sample 1 - Portrait -->
                 <div class="ba-card">
-                    <div style="position:relative;">
-                        <img src="https://images.unsplash.com/photo-1552053831-71594a27632d?w=600&h=400&fit=crop" alt="Before" class="ba-image" />
+                    <div style="position:relative; overflow:hidden;">
+                        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&h=400&fit=crop&q=10" alt="Before" class="ba-image before" />
                         <span class="ba-label before"><i class="fas fa-times-circle" style="margin-right:4px;"></i> Before</span>
                         <span class="ba-arrow"><i class="fas fa-arrow-right"></i></span>
                     </div>
-                    <img src="https://images.unsplash.com/photo-1552053831-71594a27632d?w=600&h=400&fit=crop&auto=enhance&brightness=15&contrast=10&saturation=10" alt="After" class="ba-image" style="height:180px;" />
-                    <span class="ba-label after" style="position:absolute; bottom:68px; left:12px;"><i class="fas fa-check-circle" style="margin-right:4px;"></i> After</span>
+                    <div style="position:relative; overflow:hidden;">
+                        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&h=400&fit=crop&auto=enhance&brightness=15&contrast=10&saturation=12" alt="After" class="ba-image after" />
+                        <span class="ba-label after" style="top:12px; left:12px; position:absolute;"><i class="fas fa-check-circle" style="margin-right:4px;"></i> After</span>
+                        <span class="ba-badge">4K Enhanced</span>
+                    </div>
                     <div class="ba-title">Portrait Enhancement</div>
-                    <div class="ba-desc">Improved clarity, color balance, and skin tone</div>
+                    <div class="ba-desc">Improved clarity, skin tone, and facial details</div>
                 </div>
 
-                <!-- Sample 2 -->
+                <!-- Sample 2 - Landscape -->
                 <div class="ba-card">
-                    <div style="position:relative;">
-                        <img src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=600&h=400&fit=crop" alt="Before" class="ba-image" />
+                    <div style="position:relative; overflow:hidden;">
+                        <img src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=600&h=400&fit=crop&q=10" alt="Before" class="ba-image before" />
                         <span class="ba-label before"><i class="fas fa-times-circle" style="margin-right:4px;"></i> Before</span>
                         <span class="ba-arrow"><i class="fas fa-arrow-right"></i></span>
                     </div>
-                    <img src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=600&h=400&fit=crop&auto=enhance&brightness=20&contrast=15&saturation=15" alt="After" class="ba-image" style="height:180px;" />
-                    <span class="ba-label after" style="position:absolute; bottom:68px; left:12px;"><i class="fas fa-check-circle" style="margin-right:4px;"></i> After</span>
+                    <div style="position:relative; overflow:hidden;">
+                        <img src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=600&h=400&fit=crop&auto=enhance&brightness=20&contrast=15&saturation=20" alt="After" class="ba-image after" />
+                        <span class="ba-label after" style="top:12px; left:12px; position:absolute;"><i class="fas fa-check-circle" style="margin-right:4px;"></i> After</span>
+                        <span class="ba-badge">HDR Enhanced</span>
+                    </div>
                     <div class="ba-title">Landscape Enhancement</div>
                     <div class="ba-desc">Vibrant colors, improved contrast and detail</div>
                 </div>
 
-                <!-- Sample 3 -->
+                <!-- Sample 3 - Wedding -->
                 <div class="ba-card">
-                    <div style="position:relative;">
-                        <img src="https://images.unsplash.com/photo-1519741497674-611481863552?w=600&h=400&fit=crop" alt="Before" class="ba-image" />
+                    <div style="position:relative; overflow:hidden;">
+                        <img src="https://images.unsplash.com/photo-1519741497674-611481863552?w=600&h=400&fit=crop&q=10" alt="Before" class="ba-image before" />
                         <span class="ba-label before"><i class="fas fa-times-circle" style="margin-right:4px;"></i> Before</span>
                         <span class="ba-arrow"><i class="fas fa-arrow-right"></i></span>
                     </div>
-                    <img src="https://images.unsplash.com/photo-1519741497674-611481863552?w=600&h=400&fit=crop&auto=enhance&brightness=10&contrast=12&saturation=8" alt="After" class="ba-image" style="height:180px;" />
-                    <span class="ba-label after" style="position:absolute; bottom:68px; left:12px;"><i class="fas fa-check-circle" style="margin-right:4px;"></i> After</span>
+                    <div style="position:relative; overflow:hidden;">
+                        <img src="https://images.unsplash.com/photo-1519741497674-611481863552?w=600&h=400&fit=crop&auto=enhance&brightness=12&contrast=8&saturation=15&warmth=10" alt="After" class="ba-image after" />
+                        <span class="ba-label after" style="top:12px; left:12px; position:absolute;"><i class="fas fa-check-circle" style="margin-right:4px;"></i> After</span>
+                        <span class="ba-badge">Studio Quality</span>
+                    </div>
                     <div class="ba-title">Wedding Photo Enhancement</div>
-                    <div class="ba-desc">Better lighting, color correction, and clarity</div>
+                    <div class="ba-desc">Better lighting, color correction, and warmth</div>
                 </div>
             </div>
         </div>
