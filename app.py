@@ -57,9 +57,18 @@ def index():
 
 @app.route('/admin')
 def admin():
-    """Admin dashboard"""
+    """Admin dashboard - no login required"""
     orders = load_orders()
-    return render_template('admin.html', orders=orders)
+    # Calculate stats
+    stats = {
+        'total': len(orders),
+        'pending': len([o for o in orders if o['status'] == 'pending']),
+        'processing': len([o for o in orders if o['status'] == 'processing']),
+        'completed': len([o for o in orders if o['status'] == 'completed']),
+        'paid': len([o for o in orders if o['payment_status'] == 'paid']),
+        'revenue': sum([o.get('amount', 100) for o in orders if o['payment_status'] == 'paid'])
+    }
+    return render_template('admin.html', orders=orders, stats=stats)
 
 @app.route('/api/upload', methods=['POST'])
 def upload_photo():
