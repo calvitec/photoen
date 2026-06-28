@@ -5,15 +5,11 @@ import os
 import uuid
 import json
 from werkzeug.utils import secure_filename
-from dotenv import load_dotenv
-
-# Load environment variables
-load_dotenv()
 
 app = Flask(__name__)
 
-# ===== CONFIGURATION =====
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
+# ===== HARDCODED CONFIGURATION (No .env needed) =====
+app.config['SECRET_KEY'] = 'dev-secret-key-12345'
 
 # File Upload
 app.config['UPLOAD_FOLDER'] = 'uploads'
@@ -21,15 +17,16 @@ app.config['ENHANCED_FOLDER'] = 'enhanced'
 app.config['MAX_CONTENT_LENGTH'] = 20 * 1024 * 1024  # 20MB
 ALLOWED_EXTENSIONS = {'jpg', 'jpeg', 'png', 'webp'}
 
-# Email Configuration
-app.config['MAIL_SERVER'] = os.environ.get('MAIL_SERVER', 'smtp.gmail.com')
-app.config['MAIL_PORT'] = int(os.environ.get('MAIL_PORT', 587))
-app.config['MAIL_USE_TLS'] = os.environ.get('MAIL_USE_TLS', 'True') == 'True'
-app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME')
-app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD')
-app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_DEFAULT_SENDER')
+# ===== EMAIL CONFIGURATION (OPTIONAL - Comment out if not needed) =====
+# If you don't want email, just comment these lines out
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USERNAME'] = 'your-email@gmail.com'  # Change this
+app.config['MAIL_PASSWORD'] = 'your-app-password'     # Change this
+app.config['MAIL_DEFAULT_SENDER'] = 'your-email@gmail.com'
 
-# Initialize mail
+# Initialize mail (comment this out if not using email)
 mail = Mail(app)
 
 # Create folders
@@ -68,8 +65,9 @@ def generate_order_id():
 
 def send_enhanced_photo(order):
     """Send the enhanced photo to the customer via email"""
-    if not app.config['MAIL_USERNAME']:
-        return False, "Email not configured"
+    # If email not configured, skip
+    if not app.config.get('MAIL_USERNAME'):
+        return False, "Email not configured - skipping"
     
     try:
         enhanced_path = os.path.join(app.config['ENHANCED_FOLDER'], order['enhanced_filename'])
@@ -203,14 +201,8 @@ def update_order_status(order_id):
         order['status'] = new_status
         save_orders(orders)
 
-        # If status is 'completed' and enhanced file exists, send email
         if new_status == 'completed' and order.get('enhanced_filename'):
             success, message = send_enhanced_photo(order)
-            return jsonify({
-                'success': True,
-                'message': 'Order completed and email sent' if success else f'Order completed but {message}',
-                'email_sent': success
-            }), 200
 
         return jsonify({'success': True, 'message': f'Status updated to {new_status}'}), 200
 
@@ -272,12 +264,12 @@ def upload_enhanced_photo(order_id):
         order['status'] = 'completed'
         save_orders(orders)
 
-        # Send email with enhanced photo
+        # Try to send email (if configured)
         success, message = send_enhanced_photo(order)
 
         return jsonify({
             'success': True,
-            'message': 'Enhanced photo uploaded and email sent' if success else f'Enhanced photo uploaded but {message}',
+            'message': 'Enhanced photo uploaded successfully',
             'enhanced_filename': unique_filename,
             'email_sent': success
         }), 200
