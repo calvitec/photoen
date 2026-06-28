@@ -1,25 +1,19 @@
 from flask import Flask, request, jsonify, render_template, send_file
-from flask_sqlalchemy import SQLAlchemy
 from flask_mail import Mail, Message
 from datetime import datetime
 import os
 import uuid
+import json
 from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
 
+# Load environment variables
 load_dotenv()
 
 app = Flask(__name__)
 
 # ===== CONFIGURATION =====
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
-
-# Database
-database_url = os.environ.get('DATABASE_URL')
-if database_url and database_url.startswith('postgres://'):
-    database_url = database_url.replace('postgres://', 'postgresql://', 1)
-app.config['SQLALCHEMY_DATABASE_URI'] = database_url or 'sqlite:///orders.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # File Upload
 app.config['UPLOAD_FOLDER'] = 'uploads'
@@ -35,50 +29,37 @@ app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME')
 app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD')
 app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_DEFAULT_SENDER')
 
-# Initialize extensions
-db = SQLAlchemy(app)
+# Initialize mail
 mail = Mail(app)
 
 # Create folders
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 os.makedirs(app.config['ENHANCED_FOLDER'], exist_ok=True)
 
-# ===== DATABASE MODELS =====
-class Order(db.Model):
-    __tablename__ = 'orders'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    order_id = db.Column(db.String(20), unique=True, nullable=False)
-    customer_name = db.Column(db.String(100), nullable=False)
-    customer_email = db.Column(db.String(100), nullable=False)
-    customer_phone = db.Column(db.String(20))
-    original_filename = db.Column(db.String(200), nullable=False)
-    stored_filename = db.Column(db.String(200), nullable=False)
-    enhanced_filename = db.Column(db.String(200))
-    status = db.Column(db.String(20), default='pending')
-    payment_status = db.Column(db.String(20), default='pending')
-    amount = db.Column(db.Float, default=100.00)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'order_id': self.order_id,
-            'customer_name': self.customer_name,
-            'customer_email': self.customer_email,
-            'customer_phone': self.customer_phone,
-            'original_filename': self.original_filename,
-            'stored_filename': self.stored_filename,
-            'enhanced_filename': self.enhanced_filename,
-            'status': self.status,
-            'payment_status': self.payment_status,
-            'amount': self.amount,
-            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M'),
-            'enhanced_url': f'/enhanced/{self.enhanced_filename}' if self.enhanced_filename else None
-        }
+# JSON file for orders (acts as database)
+ORDERS_FILE = 'orders.json'
 
 # ===== HELPER FUNCTIONS =====
+def load_orders():
+    """Load orders from JSON file"""
+    try:
+        if os.path.exists(ORDERS_FILE):
+            with open(ORDERS_FILE, 'r') as f:
+                return json.load(f)
+        return []
+    except:
+        return []
+
+def save_orders(orders):
+    """Save orders to JSON file"""
+    try:
+        with open(ORDERS_FILE, 'w') as f:
+            json.dump(orders, f, indent=2)
+        return True
+    except Exception as e:
+        print(f"Error saving orders: {e}")
+        return False
+
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
@@ -91,22 +72,22 @@ def send_enhanced_photo(order):
         return False, "Email not configured"
     
     try:
-        enhanced_path = os.path.join(app.config['ENHANCED_FOLDER'], order.enhanced_filename)
+        enhanced_path = os.path.join(app.config['ENHANCED_FOLDER'], order['enhanced_filename'])
         if not os.path.exists(enhanced_path):
             return False, "Enhanced file not found"
 
         msg = Message(
             'Your Enhanced Photo is Ready! 🎉',
-            recipients=[order.customer_email]
+            recipients=[order['customer_email']]
         )
         msg.body = f"""
-Dear {order.customer_name},
+Dear {order['customer_name']},
 
 Your photo has been professionally enhanced and is now ready!
 
-Order ID: {order.order_id}
-Original: {order.original_filename}
-Enhanced: {order.enhanced_filename}
+Order ID: {order['order_id']}
+Original: {order['original_filename']}
+Enhanced: {order['enhanced_filename']}
 
 Thank you for choosing ApexBuilt Photo Enhancement!
 
@@ -116,7 +97,7 @@ The ApexBuilt Team
 
         with app.open_resource(enhanced_path) as fp:
             msg.attach(
-                order.enhanced_filename,
+                order['enhanced_filename'],
                 'image/jpeg',
                 fp.read()
             )
@@ -136,7 +117,7 @@ def index():
 @app.route('/admin')
 def admin():
     """Admin dashboard"""
-    orders = Order.query.order_by(Order.created_at.desc()).all()
+    orders = load_orders()
     return render_template('admin.html', orders=orders)
 
 @app.route('/api/upload', methods=['POST'])
@@ -160,39 +141,48 @@ def upload_photo():
         if not customer_name or not customer_email:
             return jsonify({'success': False, 'error': 'Name and email are required'}), 400
 
+        # Save file
         original_filename = secure_filename(file.filename)
         unique_filename = f"{uuid.uuid4().hex}_{original_filename}"
         file_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
         file.save(file_path)
 
+        # Create order
         order_id = generate_order_id()
-        order = Order(
-            order_id=order_id,
-            customer_name=customer_name,
-            customer_email=customer_email,
-            customer_phone=customer_phone,
-            original_filename=original_filename,
-            stored_filename=unique_filename
-        )
-        db.session.add(order)
-        db.session.commit()
+        orders = load_orders()
+        
+        new_order = {
+            'id': len(orders) + 1,
+            'order_id': order_id,
+            'customer_name': customer_name,
+            'customer_email': customer_email,
+            'customer_phone': customer_phone,
+            'original_filename': original_filename,
+            'stored_filename': unique_filename,
+            'enhanced_filename': None,
+            'status': 'pending',
+            'payment_status': 'pending',
+            'amount': 100.00,
+            'created_at': datetime.utcnow().isoformat()
+        }
+        
+        orders.append(new_order)
+        save_orders(orders)
 
         return jsonify({
             'success': True,
             'message': 'Photo uploaded successfully',
-            'order_id': order_id,
-            'order': order.to_dict()
+            'order_id': order_id
         }), 200
 
     except Exception as e:
-        db.session.rollback()
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/orders', methods=['GET'])
 def get_orders():
-    """Get all orders for the admin dashboard"""
-    orders = Order.query.order_by(Order.created_at.desc()).all()
-    return jsonify({'orders': [o.to_dict() for o in orders]}), 200
+    """Get all orders"""
+    orders = load_orders()
+    return jsonify({'orders': orders}), 200
 
 @app.route('/api/orders/<int:order_id>/status', methods=['PUT'])
 def update_order_status(order_id):
@@ -204,14 +194,17 @@ def update_order_status(order_id):
         if new_status not in ['pending', 'processing', 'completed']:
             return jsonify({'success': False, 'error': 'Invalid status'}), 400
 
-        order = Order.query.get(order_id)
+        orders = load_orders()
+        order = next((o for o in orders if o['id'] == order_id), None)
+        
         if not order:
             return jsonify({'success': False, 'error': 'Order not found'}), 404
 
-        order.status = new_status
-        db.session.commit()
+        order['status'] = new_status
+        save_orders(orders)
 
-        if new_status == 'completed' and order.enhanced_filename:
+        # If status is 'completed' and enhanced file exists, send email
+        if new_status == 'completed' and order.get('enhanced_filename'):
             success, message = send_enhanced_photo(order)
             return jsonify({
                 'success': True,
@@ -222,7 +215,6 @@ def update_order_status(order_id):
         return jsonify({'success': True, 'message': f'Status updated to {new_status}'}), 200
 
     except Exception as e:
-        db.session.rollback()
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/orders/<int:order_id>/payment', methods=['PUT'])
@@ -235,17 +227,18 @@ def update_payment_status(order_id):
         if payment_status not in ['pending', 'paid']:
             return jsonify({'success': False, 'error': 'Invalid payment status'}), 400
 
-        order = Order.query.get(order_id)
+        orders = load_orders()
+        order = next((o for o in orders if o['id'] == order_id), None)
+        
         if not order:
             return jsonify({'success': False, 'error': 'Order not found'}), 404
 
-        order.payment_status = payment_status
-        db.session.commit()
+        order['payment_status'] = payment_status
+        save_orders(orders)
 
         return jsonify({'success': True, 'message': f'Payment status updated to {payment_status}'}), 200
 
     except Exception as e:
-        db.session.rollback()
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/orders/<int:order_id>/enhance', methods=['POST'])
@@ -262,19 +255,24 @@ def upload_enhanced_photo(order_id):
         if not allowed_file(file.filename):
             return jsonify({'success': False, 'error': 'File type not allowed'}), 400
 
-        order = Order.query.get(order_id)
+        orders = load_orders()
+        order = next((o for o in orders if o['id'] == order_id), None)
+        
         if not order:
             return jsonify({'success': False, 'error': 'Order not found'}), 404
 
+        # Save enhanced file
         original_filename = secure_filename(file.filename)
         unique_filename = f"enhanced_{uuid.uuid4().hex}_{original_filename}"
         file_path = os.path.join(app.config['ENHANCED_FOLDER'], unique_filename)
         file.save(file_path)
 
-        order.enhanced_filename = unique_filename
-        order.status = 'completed'
-        db.session.commit()
+        # Update order
+        order['enhanced_filename'] = unique_filename
+        order['status'] = 'completed'
+        save_orders(orders)
 
+        # Send email with enhanced photo
         success, message = send_enhanced_photo(order)
 
         return jsonify({
@@ -285,7 +283,6 @@ def upload_enhanced_photo(order_id):
         }), 200
 
     except Exception as e:
-        db.session.rollback()
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/uploads/<filename>')
@@ -297,10 +294,6 @@ def serve_upload(filename):
 def serve_enhanced(filename):
     """Serve enhanced photos"""
     return send_file(os.path.join(app.config['ENHANCED_FOLDER'], filename))
-
-# ===== CREATE TABLES =====
-with app.app_context():
-    db.create_all()
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
