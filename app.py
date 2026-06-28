@@ -5,31 +5,44 @@ import uuid
 import base64
 import json
 from werkzeug.utils import secure_filename
+from dotenv import load_dotenv
 
-# Try to import supabase (will work on Vercel if in requirements.txt)
+# Load environment variables
+load_dotenv()
+
+# Try to import supabase
 try:
     from supabase import create_client
     SUPABASE_AVAILABLE = True
 except ImportError:
     SUPABASE_AVAILABLE = False
-    print("⚠️ Supabase not available")
+    print("⚠️ Supabase not installed. Run: pip install supabase")
 
 app = Flask(__name__)
-app.secret_key = 'dev-secret-key-12345'
+
+# ===== CONFIGURATION FROM ENV =====
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-12345')
+app.config['DEBUG'] = os.environ.get('DEBUG', 'False') == 'True'
+
+# App Settings
+APP_NAME = os.environ.get('APP_NAME', 'ApexBuilt')
+APP_PHONE = os.environ.get('APP_PHONE', '+254 745 793 27')
+APP_EMAIL = os.environ.get('APP_EMAIL', 'hello@apexbuilt.com')
+APP_LOCATION = os.environ.get('APP_LOCATION', 'Nairobi, Kenya')
 
 # ===== SUPABASE CONFIGURATION =====
-SUPABASE_URL = "https://hzqrdwerkgfmfaufabjr.supabase.co"
-SUPABASE_KEY = "sb_publishable_tnBOmCO7EFfIoXfNjEH_Tg_D7WX-zld"
+SUPABASE_URL = os.environ.get('SUPABASE_URL')
+SUPABASE_KEY = os.environ.get('SUPABASE_KEY')
 
 # Initialize Supabase with proper error handling
 DB_STATUS = {'connected': False, 'type': 'json', 'error': None}
 
-if SUPABASE_AVAILABLE:
+if SUPABASE_AVAILABLE and SUPABASE_URL and SUPABASE_KEY:
     try:
-        print(f"🔗 Connecting to Supabase...")
+        print(f"🔗 Connecting to Supabase: {SUPABASE_URL[:30]}...")
         supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
         
-        # Test the connection
+        # Test the connection with a simple query
         test_response = supabase.table('orders').select('count', count='exact').limit(1).execute()
         
         DB_STATUS['connected'] = True
@@ -43,6 +56,12 @@ if SUPABASE_AVAILABLE:
         print("📁 Falling back to JSON storage")
 else:
     supabase = None
+    if not SUPABASE_AVAILABLE:
+        print("⚠️ Supabase library not installed")
+    if not SUPABASE_URL:
+        print("⚠️ SUPABASE_URL not set in environment variables")
+    if not SUPABASE_KEY:
+        print("⚠️ SUPABASE_KEY not set in environment variables")
     print("📁 Using JSON file storage")
 
 # ===== FILE CONFIGURATION =====
@@ -183,7 +202,12 @@ def get_image_preview(filename, folder):
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return render_template('index.html', 
+        app_name=APP_NAME,
+        app_phone=APP_PHONE,
+        app_email=APP_EMAIL,
+        app_location=APP_LOCATION
+    )
 
 @app.route('/admin')
 def admin():
@@ -205,7 +229,14 @@ def admin():
             'unpaid': len([o for o in orders if o.get('payment_status') == 'pending']),
             'revenue': sum([float(o.get('amount', 50)) for o in orders if o.get('payment_status') == 'paid'])
         }
-        return render_template('admin.html', orders=orders, stats=stats, db_status=DB_STATUS)
+        return render_template('admin.html', 
+            orders=orders, 
+            stats=stats, 
+            db_status=DB_STATUS,
+            app_name=APP_NAME,
+            app_phone=APP_PHONE,
+            app_email=APP_EMAIL
+        )
     except Exception as e:
         return f"<h1>Error loading admin</h1><p>{str(e)}</p>", 500
 
@@ -214,7 +245,9 @@ def api_status():
     return jsonify({
         'database': DB_STATUS,
         'orders': len(load_orders()),
-        'timestamp': datetime.utcnow().isoformat()
+        'timestamp': datetime.utcnow().isoformat(),
+        'app_name': APP_NAME,
+        'environment': 'production' if os.environ.get('VERCEL') else 'development'
     })
 
 @app.route('/api/test-db')
@@ -225,6 +258,8 @@ def test_db():
         'error': DB_STATUS.get('error'),
         'orders_count': len(load_orders()),
         'supabase_available': SUPABASE_AVAILABLE,
+        'supabase_url_configured': bool(SUPABASE_URL),
+        'supabase_key_configured': bool(SUPABASE_KEY),
         'message': '✅ Connected to Supabase!' if DB_STATUS['connected'] else '📁 Using JSON storage'
     }
     return jsonify(result)
@@ -401,11 +436,19 @@ def handler(request, context):
 
 if __name__ == '__main__':
     print("\n" + "="*60)
-    print("🚀 APEXBUILT PHOTO ENHANCEMENT")
+    print(f"🚀 {APP_NAME} PHOTO ENHANCEMENT")
     print("="*60)
+    print(f"📱 Phone: {APP_PHONE}")
+    print(f"📧 Email: {APP_EMAIL}")
+    print(f"📍 Location: {APP_LOCATION}")
+    print("-"*60)
     print(f"📁 Database Type: {DB_STATUS['type']}")
     print(f"🔗 Connected: {'✅ YES' if DB_STATUS['connected'] else '❌ NO'}")
     if DB_STATUS.get('error'):
         print(f"⚠️ Error: {DB_STATUS['error']}")
     print("="*60)
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    print("\n💡 Environment Variables:")
+    print(f"   SUPABASE_URL: {'✅ Set' if SUPABASE_URL else '❌ Not Set'}")
+    print(f"   SUPABASE_KEY: {'✅ Set' if SUPABASE_KEY else '❌ Not Set'}")
+    print("="*60 + "\n")
+    app.run(debug=app.config['DEBUG'], host='0.0.0.0', port=5000)
