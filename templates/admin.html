@@ -14,6 +14,8 @@
             border-radius: 16px;
             transition: all 0.3s ease;
             border: 1px solid #e2e8f0;
+            padding: 24px;
+            text-align: center;
         }
         .admin-card:hover {
             box-shadow: 0 8px 25px rgba(0,0,0,0.06);
@@ -28,6 +30,11 @@
         .status-pending { background: #fef3c7; color: #92400e; }
         .status-processing { background: #dbeafe; color: #1e40af; }
         .status-completed { background: #d1fae5; color: #065f46; }
+        .admin-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+        }
         .admin-table th {
             background: #f8fafc;
             font-weight: 600;
@@ -93,10 +100,15 @@
         .drop-zone-enhanced:hover {
             background: rgba(26, 82, 118, 0.05);
         }
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+        }
         @media (max-width: 768px) {
             .admin-table { font-size: 0.75rem; }
             .admin-table th, .admin-table td { padding: 8px 10px; }
             .status-badge { font-size: 0.65rem; padding: 2px 10px; }
+            .stat-number { font-size: 1.5rem; }
         }
     </style>
 </head>
@@ -128,31 +140,31 @@
     <div style="background:#f8fafc; min-height:100vh; padding:32px 16px;">
         <div style="max-width:1280px; margin:0 auto;">
             <!-- Stats -->
-            <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:16px; margin-bottom:32px;">
-                <div class="admin-card" style="padding:24px; text-align:center;">
-                    <div style="font-size:2rem; font-weight:700; color:#1a5276;" id="totalOrders">{{ orders|length }}</div>
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:16px; margin-bottom:32px;">
+                <div class="admin-card">
+                    <div class="stat-number" style="color:#1a5276;" id="totalOrders">{{ orders|length }}</div>
                     <p style="font-size:0.875rem; color:#6b7280;">Total Orders</p>
                 </div>
-                <div class="admin-card" style="padding:24px; text-align:center;">
-                    <div style="font-size:2rem; font-weight:700; color:#f59e0b;" id="pendingOrders">{{ orders|selectattr('status', 'equalto', 'pending')|list|length }}</div>
+                <div class="admin-card">
+                    <div class="stat-number" style="color:#f59e0b;" id="pendingOrders">{{ orders|selectattr('status', 'equalto', 'pending')|list|length }}</div>
                     <p style="font-size:0.875rem; color:#6b7280;">Pending</p>
                 </div>
-                <div class="admin-card" style="padding:24px; text-align:center;">
-                    <div style="font-size:2rem; font-weight:700; color:#3b82f6;" id="processingOrders">{{ orders|selectattr('status', 'equalto', 'processing')|list|length }}</div>
+                <div class="admin-card">
+                    <div class="stat-number" style="color:#3b82f6;" id="processingOrders">{{ orders|selectattr('status', 'equalto', 'processing')|list|length }}</div>
                     <p style="font-size:0.875rem; color:#6b7280;">Processing</p>
                 </div>
-                <div class="admin-card" style="padding:24px; text-align:center;">
-                    <div style="font-size:2rem; font-weight:700; color:#10b981;" id="completedOrders">{{ orders|selectattr('status', 'equalto', 'completed')|list|length }}</div>
+                <div class="admin-card">
+                    <div class="stat-number" style="color:#10b981;" id="completedOrders">{{ orders|selectattr('status', 'equalto', 'completed')|list|length }}</div>
                     <p style="font-size:0.875rem; color:#6b7280;">Completed</p>
                 </div>
             </div>
 
             <!-- Orders Table -->
-            <div class="admin-card" style="padding:24px; box-shadow:0 1px 3px 0 rgba(0,0,0,0.1); overflow-x:auto;">
+            <div style="background:white; border-radius:16px; padding:24px; box-shadow:0 1px 3px 0 rgba(0,0,0,0.1); border:1px solid #e2e8f0; overflow-x:auto;">
                 <h3 style="font-size:1.125rem; font-weight:700; color:#0b2b44; margin-bottom:16px; display:flex; align-items:center; gap:8px;">
                     <i class="fas fa-list-ul" style="color:#1a5276;"></i> All Orders
                 </h3>
-                <table class="admin-table" style="width:100%; font-size:0.875rem; border-collapse:collapse;">
+                <table class="admin-table">
                     <thead>
                         <tr>
                             <th>#</th>
