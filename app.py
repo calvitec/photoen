@@ -22,15 +22,30 @@ SUPABASE_URL = "https://hzqrdwerkgfmfaufabjr.supabase.co"
 SUPABASE_KEY = "sb_publishable_tnBOmCO7EFfIoXfNjEH_Tg_D7WX-zld"
 
 # Initialize Supabase client if available
+DB_STATUS = {
+    'connected': False,
+    'type': 'json',
+    'error': None,
+    'tables': []
+}
+
 if SUPABASE_AVAILABLE:
     try:
         supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+        # Test connection by trying to query
+        test_response = supabase.table('orders').select('count', count='exact').limit(1).execute()
+        DB_STATUS['connected'] = True
+        DB_STATUS['type'] = 'supabase'
+        DB_STATUS['tables'] = ['orders']
         print("✅ Supabase connected successfully!")
     except Exception as e:
         print(f"⚠️ Supabase connection failed: {e}")
         SUPABASE_AVAILABLE = False
+        DB_STATUS['error'] = str(e)
 else:
     supabase = None
+    DB_STATUS['type'] = 'json'
+    print("📁 Using JSON file storage")
 
 # ===== FILE CONFIGURATION =====
 # Use /tmp for Vercel, local folder for development
@@ -130,7 +145,6 @@ def add_order_to_db(order_data):
 def add_order_to_json(order_data):
     """Add order to JSON file"""
     orders = load_orders_json()
-    # Ensure created_at exists
     if 'created_at' not in order_data:
         order_data['created_at'] = datetime.utcnow().isoformat()
     order_data['id'] = len(orders) + 1
@@ -210,7 +224,6 @@ def admin():
         orders = load_orders()
         # Add preview URLs and ensure all fields exist
         for order in orders:
-            # Ensure all required fields exist
             if 'created_at' not in order:
                 order['created_at'] = datetime.utcnow().isoformat()
             if 'status' not in order:
@@ -233,11 +246,50 @@ def admin():
             'unpaid': len([o for o in orders if o.get('payment_status') == 'pending']),
             'revenue': sum([float(o.get('amount', 50)) for o in orders if o.get('payment_status') == 'paid'])
         }
-        return render_template('admin.html', orders=orders, stats=stats)
+        return render_template('admin.html', orders=orders, stats=stats, db_status=DB_STATUS)
     except Exception as e:
         print(f"Error in admin route: {e}")
-        # Return a simple error page
-        return f"<h1>Error loading admin</h1><p>{str(e)}</p><p>Please check your Supabase table structure.</p>", 500
+        return f"<h1>Error loading admin</h1><p>{str(e)}</p>", 500
+
+@app.route('/api/status')
+def api_status():
+    """API endpoint to check database status"""
+    return jsonify({
+        'status': 'ok',
+        'database': DB_STATUS,
+        'timestamp': datetime.utcnow().isoformat()
+    })
+
+@app.route('/api/test-db')
+def test_db():
+    """Test database connection and return details"""
+    result = {
+        'supabase_available': SUPABASE_AVAILABLE,
+        'connected': DB_STATUS['connected'],
+        'type': DB_STATUS['type'],
+        'error': DB_STATUS.get('error'),
+        'orders_count': 0,
+        'sample_orders': []
+    }
+    
+    if SUPABASE_AVAILABLE and supabase:
+        try:
+            # Get count of orders
+            count_response = supabase.table('orders').select('count', count='exact').execute()
+            result['orders_count'] = count_response.count if hasattr(count_response, 'count') else 0
+            
+            # Get sample orders
+            sample_response = supabase.table('orders').select('*').limit(3).execute()
+            result['sample_orders'] = sample_response.data
+        except Exception as e:
+            result['error'] = str(e)
+    else:
+        # JSON fallback
+        orders = load_orders_json()
+        result['orders_count'] = len(orders)
+        result['sample_orders'] = orders[:3]
+    
+    return jsonify(result)
 
 @app.route('/api/upload', methods=['POST'])
 def upload_photo():
@@ -431,4 +483,12 @@ def handler(request, context):
     return app(request, context)
 
 if __name__ == '__main__':
+    print("\n" + "="*50)
+    print("🚀 APEXBUILT PHOTO ENHANCEMENT")
+    print("="*50)
+    print(f"📁 Database Type: {DB_STATUS['type']}")
+    print(f"🔗 Connected: {'✅' if DB_STATUS['connected'] else '❌'}")
+    if DB_STATUS.get('error'):
+        print(f"⚠️ Error: {DB_STATUS['error']}")
+    print("="*50 + "\n")
     app.run(debug=True, host='0.0.0.0', port=5000)
