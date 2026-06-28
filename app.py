@@ -74,7 +74,16 @@ def load_orders():
     if SUPABASE_AVAILABLE and supabase:
         try:
             response = supabase.table('orders').select('*').order('created_at', desc=True).execute()
-            return response.data
+            data = response.data
+            # Ensure all orders have necessary fields
+            for order in data:
+                if 'created_at' not in order:
+                    order['created_at'] = datetime.utcnow().isoformat()
+                if 'status' not in order:
+                    order['status'] = 'pending'
+                if 'payment_status' not in order:
+                    order['payment_status'] = 'pending'
+            return data
         except Exception as e:
             print(f"Error loading from Supabase: {e}, using JSON fallback")
             return load_orders_json()
@@ -86,7 +95,12 @@ def get_order_by_id(order_id):
     if SUPABASE_AVAILABLE and supabase:
         try:
             response = supabase.table('orders').select('*').eq('id', order_id).execute()
-            return response.data[0] if response.data else None
+            if response.data:
+                order = response.data[0]
+                if 'created_at' not in order:
+                    order['created_at'] = datetime.utcnow().isoformat()
+                return order
+            return None
         except:
             # Fallback to JSON
             orders = load_orders_json()
@@ -116,6 +130,9 @@ def add_order_to_db(order_data):
 def add_order_to_json(order_data):
     """Add order to JSON file"""
     orders = load_orders_json()
+    # Ensure created_at exists
+    if 'created_at' not in order_data:
+        order_data['created_at'] = datetime.utcnow().isoformat()
     order_data['id'] = len(orders) + 1
     orders.append(order_data)
     save_orders_json(orders)
@@ -189,23 +206,38 @@ def index():
 
 @app.route('/admin')
 def admin():
-    orders = load_orders()
-    # Add preview URLs
-    for order in orders:
-        order['original_preview'] = get_image_preview(order['stored_filename'], UPLOAD_FOLDER)
-        if order.get('enhanced_filename'):
-            order['enhanced_preview'] = get_image_preview(order['enhanced_filename'], ENHANCED_FOLDER)
-    
-    stats = {
-        'total': len(orders),
-        'pending': len([o for o in orders if o['status'] == 'pending']),
-        'processing': len([o for o in orders if o['status'] == 'processing']),
-        'completed': len([o for o in orders if o['status'] == 'completed']),
-        'paid': len([o for o in orders if o['payment_status'] == 'paid']),
-        'unpaid': len([o for o in orders if o['payment_status'] == 'pending']),
-        'revenue': sum([float(o.get('amount', 50)) for o in orders if o['payment_status'] == 'paid'])
-    }
-    return render_template('admin.html', orders=orders, stats=stats)
+    try:
+        orders = load_orders()
+        # Add preview URLs and ensure all fields exist
+        for order in orders:
+            # Ensure all required fields exist
+            if 'created_at' not in order:
+                order['created_at'] = datetime.utcnow().isoformat()
+            if 'status' not in order:
+                order['status'] = 'pending'
+            if 'payment_status' not in order:
+                order['payment_status'] = 'pending'
+            if 'amount' not in order:
+                order['amount'] = 50.00
+            
+            order['original_preview'] = get_image_preview(order.get('stored_filename', ''), UPLOAD_FOLDER)
+            if order.get('enhanced_filename'):
+                order['enhanced_preview'] = get_image_preview(order['enhanced_filename'], ENHANCED_FOLDER)
+        
+        stats = {
+            'total': len(orders),
+            'pending': len([o for o in orders if o.get('status') == 'pending']),
+            'processing': len([o for o in orders if o.get('status') == 'processing']),
+            'completed': len([o for o in orders if o.get('status') == 'completed']),
+            'paid': len([o for o in orders if o.get('payment_status') == 'paid']),
+            'unpaid': len([o for o in orders if o.get('payment_status') == 'pending']),
+            'revenue': sum([float(o.get('amount', 50)) for o in orders if o.get('payment_status') == 'paid'])
+        }
+        return render_template('admin.html', orders=orders, stats=stats)
+    except Exception as e:
+        print(f"Error in admin route: {e}")
+        # Return a simple error page
+        return f"<h1>Error loading admin</h1><p>{str(e)}</p><p>Please check your Supabase table structure.</p>", 500
 
 @app.route('/api/upload', methods=['POST'])
 def upload_photo():
@@ -244,7 +276,8 @@ def upload_photo():
             'enhanced_filename': None,
             'status': 'pending',
             'payment_status': 'pending',
-            'amount': 50.00
+            'amount': 50.00,
+            'created_at': datetime.utcnow().isoformat()
         }
         
         # Add to database
@@ -263,7 +296,7 @@ def upload_photo():
 def get_orders():
     orders = load_orders()
     for order in orders:
-        order['original_preview'] = get_image_preview(order['stored_filename'], UPLOAD_FOLDER)
+        order['original_preview'] = get_image_preview(order.get('stored_filename', ''), UPLOAD_FOLDER)
         if order.get('enhanced_filename'):
             order['enhanced_preview'] = get_image_preview(order['enhanced_filename'], ENHANCED_FOLDER)
     return jsonify({'orders': orders}), 200
