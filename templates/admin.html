@@ -1,266 +1,356 @@
-{% extends "layout.html" %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Dashboard · ApexBuilt</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        .admin-card {
+            background: white;
+            border-radius: 16px;
+            transition: all 0.3s ease;
+            border: 1px solid #e2e8f0;
+        }
+        .admin-card:hover {
+            box-shadow: 0 8px 25px rgba(0,0,0,0.06);
+        }
+        .status-badge {
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: inline-block;
+        }
+        .status-pending { background: #fef3c7; color: #92400e; }
+        .status-processing { background: #dbeafe; color: #1e40af; }
+        .status-completed { background: #d1fae5; color: #065f46; }
+        .admin-table th {
+            background: #f8fafc;
+            font-weight: 600;
+            color: #1e293b;
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        .admin-table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #f1f5f9;
+            vertical-align: middle;
+        }
+        .admin-table tr:hover {
+            background: #f8fafc;
+        }
+        .btn-action {
+            padding: 4px 12px;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .btn-action:hover {
+            transform: translateY(-1px);
+        }
+        .btn-process { background: #dbeafe; color: #1e40af; }
+        .btn-process:hover { background: #bfdbfe; }
+        .btn-complete { background: #d1fae5; color: #065f46; }
+        .btn-complete:hover { background: #a7f3d0; }
+        .btn-paid { background: #ede9fe; color: #5b21b6; }
+        .btn-paid:hover { background: #ddd6fe; }
+        .btn-view { background: #f3f4f6; color: #374151; }
+        .btn-view:hover { background: #e5e7eb; }
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+            padding: 16px;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 32px;
+            max-width: 448px;
+            width: 100%;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+        }
+        .drop-zone-enhanced {
+            border: 2px dashed #1a5276;
+            border-radius: 12px;
+            padding: 32px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .drop-zone-enhanced:hover {
+            background: rgba(26, 82, 118, 0.05);
+        }
+        @media (max-width: 768px) {
+            .admin-table { font-size: 0.75rem; }
+            .admin-table th, .admin-table td { padding: 8px 10px; }
+            .status-badge { font-size: 0.65rem; padding: 2px 10px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Admin Nav -->
+    <nav style="background:#0b2b44; color:white; padding:16px; box-shadow:0 10px 15px -3px rgba(0,0,0,0.1);">
+        <div style="max-width:1280px; margin:0 auto; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:16px;">
+            <div style="display:flex; align-items:center; gap:16px;">
+                <a href="/" style="display:flex; align-items:center; gap:8px; text-decoration:none; color:white;">
+                    <div style="width:32px; height:32px; border-radius:8px; background:linear-gradient(135deg, #1a5276, #2e86c1); display:flex; align-items:center; justify-content:center; color:white; font-size:0.875rem;">
+                        <i class="fas fa-crown"></i>
+                    </div>
+                    <span style="font-size:1.125rem; font-weight:700;">Apex<span style="color:#2e86c1;">Built</span></span>
+                </a>
+                <span style="font-size:0.875rem; color:#9ca3af;">| Admin Dashboard</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:16px;">
+                <a href="/" style="font-size:0.875rem; color:#9ca3af; text-decoration:none; transition:color 0.3s;">
+                    <i class="fas fa-arrow-left" style="margin-right:4px;"></i> Back to Site
+                </a>
+                <button onclick="location.reload()" style="padding:8px 16px; border-radius:8px; background:#1a5276; color:white; font-size:0.875rem; border:none; cursor:pointer; transition:background 0.3s;">
+                    <i class="fas fa-sync-alt" style="margin-right:4px;"></i> Refresh
+                </button>
+            </div>
+        </div>
+    </nav>
 
-{% block title %}Admin Dashboard · ApexBuilt{% endblock %}
-
-{% block content %}
-<!-- Admin Nav -->
-<nav class="bg-[#0b2b44] text-white py-4 px-4 shadow-lg">
-    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
-        <div class="flex items-center gap-4">
-            <a href="/" class="flex items-center gap-2">
-                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-[#1a5276] to-[#2e86c1] flex items-center justify-center text-white text-sm">
-                    <i class="fas fa-crown"></i>
+    <!-- Admin Content -->
+    <div style="background:#f8fafc; min-height:100vh; padding:32px 16px;">
+        <div style="max-width:1280px; margin:0 auto;">
+            <!-- Stats -->
+            <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:16px; margin-bottom:32px;">
+                <div class="admin-card" style="padding:24px; text-align:center;">
+                    <div style="font-size:2rem; font-weight:700; color:#1a5276;" id="totalOrders">{{ orders|length }}</div>
+                    <p style="font-size:0.875rem; color:#6b7280;">Total Orders</p>
                 </div>
-                <span class="text-lg font-bold">Apex<span class="text-[#2e86c1]">Built</span></span>
-            </a>
-            <span class="text-sm text-gray-300">| Admin Dashboard</span>
-        </div>
-        <div class="flex items-center gap-4">
-            <a href="/" class="text-sm text-gray-300 hover:text-white transition">
-                <i class="fas fa-arrow-left mr-1"></i> Back to Site
-            </a>
-            <button onclick="refreshOrders()" class="px-4 py-2 rounded-lg bg-[#1a5276] hover:bg-[#2e86c1] text-white text-sm transition">
-                <i class="fas fa-sync-alt mr-1"></i> Refresh
-            </button>
+                <div class="admin-card" style="padding:24px; text-align:center;">
+                    <div style="font-size:2rem; font-weight:700; color:#f59e0b;" id="pendingOrders">{{ orders|selectattr('status', 'equalto', 'pending')|list|length }}</div>
+                    <p style="font-size:0.875rem; color:#6b7280;">Pending</p>
+                </div>
+                <div class="admin-card" style="padding:24px; text-align:center;">
+                    <div style="font-size:2rem; font-weight:700; color:#3b82f6;" id="processingOrders">{{ orders|selectattr('status', 'equalto', 'processing')|list|length }}</div>
+                    <p style="font-size:0.875rem; color:#6b7280;">Processing</p>
+                </div>
+                <div class="admin-card" style="padding:24px; text-align:center;">
+                    <div style="font-size:2rem; font-weight:700; color:#10b981;" id="completedOrders">{{ orders|selectattr('status', 'equalto', 'completed')|list|length }}</div>
+                    <p style="font-size:0.875rem; color:#6b7280;">Completed</p>
+                </div>
+            </div>
+
+            <!-- Orders Table -->
+            <div class="admin-card" style="padding:24px; box-shadow:0 1px 3px 0 rgba(0,0,0,0.1); overflow-x:auto;">
+                <h3 style="font-size:1.125rem; font-weight:700; color:#0b2b44; margin-bottom:16px; display:flex; align-items:center; gap:8px;">
+                    <i class="fas fa-list-ul" style="color:#1a5276;"></i> All Orders
+                </h3>
+                <table class="admin-table" style="width:100%; font-size:0.875rem; border-collapse:collapse;">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Order ID</th>
+                            <th>Customer</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th>Photo</th>
+                            <th>Status</th>
+                            <th>Payment</th>
+                            <th>Enhanced</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ordersBody">
+                        {% for order in orders %}
+                        <tr id="order-{{ order.id }}">
+                            <td style="font-weight:500; color:#0b2b44;">{{ loop.index }}</td>
+                            <td style="font-family:monospace; font-size:0.75rem;">{{ order.order_id }}</td>
+                            <td style="font-weight:500;">{{ order.customer_name }}</td>
+                            <td style="color:#4b5563;">{{ order.customer_email }}</td>
+                            <td style="color:#4b5563;">{{ order.customer_phone or '—' }}</td>
+                            <td>
+                                <span style="font-size:0.75rem; background:#f3f4f6; padding:4px 8px; border-radius:4px;">{{ order.original_filename }}</span>
+                            </td>
+                            <td>
+                                <span class="status-badge status-{{ order.status }}">
+                                    {{ order.status|capitalize }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="status-badge {% if order.payment_status == 'paid' %}status-completed{% else %}status-pending{% endif %}">
+                                    {{ order.payment_status|capitalize }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if order.enhanced_filename %}
+                                    <span style="font-size:0.75rem; color:#10b981;"><i class="fas fa-check-circle" style="margin-right:4px;"></i> Delivered</span>
+                                {% else %}
+                                    <span style="font-size:0.75rem; color:#9ca3af;">—</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                                    {% if order.status == 'pending' %}
+                                        <button onclick="updateStatus({{ order.id }}, 'processing')" class="btn-action btn-process">
+                                            Process
+                                        </button>
+                                        <button onclick="updatePayment({{ order.id }}, 'paid')" class="btn-action btn-paid">
+                                            Mark Paid
+                                        </button>
+                                    {% endif %}
+                                    {% if order.status == 'processing' %}
+                                        <button onclick="openEnhanceModal({{ order.id }})" class="btn-action btn-complete">
+                                            Complete
+                                        </button>
+                                    {% endif %}
+                                    {% if order.status == 'completed' and order.enhanced_filename %}
+                                        <a href="/enhanced/{{ order.enhanced_filename }}" target="_blank" class="btn-action btn-view" style="text-decoration:none;">
+                                            View
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
-</nav>
 
-<!-- Admin Content -->
-<div class="bg-[#f8fafc] min-h-screen py-8 px-4">
-    <div class="max-w-7xl mx-auto">
-        <!-- Stats -->
-        <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
-            <div class="admin-card p-6 text-center">
-                <div class="text-3xl font-bold text-[#1a5276]" id="totalOrders">{{ orders|length }}</div>
-                <p class="text-sm text-gray-500">Total Orders</p>
-            </div>
-            <div class="admin-card p-6 text-center">
-                <div class="text-3xl font-bold text-[#f59e0b]" id="pendingOrders">{{ orders|selectattr('status', 'equalto', 'pending')|list|length }}</div>
-                <p class="text-sm text-gray-500">Pending</p>
-            </div>
-            <div class="admin-card p-6 text-center">
-                <div class="text-3xl font-bold text-[#3b82f6]" id="processingOrders">{{ orders|selectattr('status', 'equalto', 'processing')|list|length }}</div>
-                <p class="text-sm text-gray-500">Processing</p>
-            </div>
-            <div class="admin-card p-6 text-center">
-                <div class="text-3xl font-bold text-[#10b981]" id="completedOrders">{{ orders|selectattr('status', 'equalto', 'completed')|list|length }}</div>
-                <p class="text-sm text-gray-500">Completed</p>
-            </div>
-            <div class="admin-card p-6 text-center">
-                <div class="text-3xl font-bold text-[#8b5cf6]" id="paidOrders">{{ orders|selectattr('payment_status', 'equalto', 'paid')|list|length }}</div>
-                <p class="text-sm text-gray-500">Paid</p>
-            </div>
-        </div>
-
-        <!-- Orders Table -->
-        <div class="admin-card p-6 shadow-sm overflow-x-auto">
-            <h3 class="text-lg font-bold text-[#0b2b44] mb-4 flex items-center gap-2">
-                <i class="fas fa-list-ul text-[#1a5276]"></i> All Orders
-            </h3>
-            <table class="admin-table w-full text-sm">
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Order ID</th>
-                        <th>Customer</th>
-                        <th>Email</th>
-                        <th>Phone</th>
-                        <th>Photo</th>
-                        <th>Status</th>
-                        <th>Payment</th>
-                        <th>Enhanced</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="ordersBody">
-                    {% for order in orders %}
-                    <tr id="order-{{ order.id }}">
-                        <td class="font-medium text-[#0b2b44]">{{ loop.index }}</td>
-                        <td class="font-mono text-xs">{{ order.order_id }}</td>
-                        <td class="font-medium">{{ order.customer_name }}</td>
-                        <td class="text-gray-600">{{ order.customer_email }}</td>
-                        <td class="text-gray-600">{{ order.customer_phone or '—' }}</td>
-                        <td>
-                            <span class="text-xs bg-gray-100 px-2 py-1 rounded">{{ order.original_filename }}</span>
-                        </td>
-                        <td>
-                            <span class="status-badge status-{{ order.status }}">
-                                {{ order.status|capitalize }}
-                            </span>
-                        </td>
-                        <td>
-                            <span class="status-badge {% if order.payment_status == 'paid' %}status-completed{% else %}status-pending{% endif %}">
-                                {{ order.payment_status|capitalize }}
-                            </span>
-                        </td>
-                        <td>
-                            {% if order.enhanced_filename %}
-                                <span class="text-xs text-[#10b981]"><i class="fas fa-check-circle mr-1"></i> Delivered</span>
-                            {% else %}
-                                <span class="text-xs text-gray-400">—</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <div class="flex gap-2 flex-wrap">
-                                {% if order.status == 'pending' %}
-                                    <button onclick="updateStatus({{ order.id }}, 'processing')" class="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-full hover:bg-blue-200 transition">
-                                        Process
-                                    </button>
-                                    <button onclick="updatePayment({{ order.id }}, 'paid')" class="text-xs bg-purple-100 text-purple-700 px-3 py-1 rounded-full hover:bg-purple-200 transition">
-                                        Mark Paid
-                                    </button>
-                                {% endif %}
-                                {% if order.status == 'processing' %}
-                                    <button onclick="completeOrder({{ order.id }})" class="text-xs bg-green-100 text-green-700 px-3 py-1 rounded-full hover:bg-green-200 transition">
-                                        Complete
-                                    </button>
-                                {% endif %}
-                                {% if order.status == 'completed' and order.enhanced_filename %}
-                                    <a href="{{ url_for('serve_enhanced', filename=order.enhanced_filename) }}" target="_blank" class="text-xs bg-gray-100 text-gray-700 px-3 py-1 rounded-full hover:bg-gray-200 transition">
-                                        View
-                                    </a>
-                                {% endif %}
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+    <!-- Upload Enhanced Modal -->
+    <div id="enhanceModal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 style="font-size:1.25rem; font-weight:700; color:#0b2b44; margin-bottom:16px;">Upload Enhanced Photo</h3>
+            <form id="enhanceForm" enctype="multipart/form-data">
+                <input type="hidden" id="enhanceOrderId" name="order_id" />
+                <div class="drop-zone-enhanced" onclick="document.getElementById('enhanceFileInput').click()">
+                    <i class="fas fa-cloud-upload-alt" style="font-size:2rem; color:#1a5276; margin-bottom:8px;"></i>
+                    <p style="font-size:0.875rem; color:#4b5563;">Click to upload enhanced photo</p>
+                    <input type="file" id="enhanceFileInput" name="enhanced_photo" accept=".jpg,.jpeg,.png,.webp" style="display:none;" required />
+                </div>
+                <div id="enhancePreview" style="display:none; margin-top:16px;">
+                    <img id="enhancePreviewImg" style="width:100%; height:192px; object-fit:cover; border-radius:12px;" />
+                </div>
+                <div style="display:flex; gap:12px; margin-top:24px;">
+                    <button type="submit" style="flex:1; padding:12px 24px; border-radius:12px; background:linear-gradient(135deg, #1a5276, #2e86c1); color:white; font-weight:700; border:none; cursor:pointer; transition:all 0.3s;">
+                        <i class="fas fa-upload" style="margin-right:8px;"></i> Upload
+                    </button>
+                    <button type="button" onclick="closeModal()" style="padding:12px 24px; border-radius:12px; background:#e5e7eb; color:#374151; font-weight:700; border:none; cursor:pointer; transition:all 0.3s;">
+                        Cancel
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
-</div>
 
-<!-- Upload Enhanced Modal -->
-<div id="enhanceModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-    <div class="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl">
-        <h3 class="text-xl font-bold text-[#0b2b44] mb-4">Upload Enhanced Photo</h3>
-        <form id="enhanceForm" enctype="multipart/form-data">
-            <input type="hidden" id="enhanceOrderId" name="order_id" />
-            <div class="drop-zone-enhanced p-8 text-center cursor-pointer border-2 border-dashed border-[#1a5276] rounded-xl hover:bg-[#1a5276]/5 transition">
-                <i class="fas fa-cloud-upload-alt text-4xl text-[#1a5276] mb-2"></i>
-                <p class="text-sm text-gray-600">Click to upload enhanced photo</p>
-                <input type="file" id="enhanceFileInput" name="enhanced_photo" accept=".jpg,.jpeg,.png,.webp" class="hidden" required />
-            </div>
-            <div id="enhancePreview" class="hidden mt-4">
-                <img id="enhancePreviewImg" class="w-full h-48 object-cover rounded-xl" />
-            </div>
-            <div class="flex gap-3 mt-6">
-                <button type="submit" class="flex-1 px-6 py-3 rounded-xl btn-primary text-white font-bold transition">
-                    <i class="fas fa-upload mr-2"></i> Upload
-                </button>
-                <button type="button" onclick="closeModal()" class="px-6 py-3 rounded-xl bg-gray-200 text-gray-700 font-bold hover:bg-gray-300 transition">
-                    Cancel
-                </button>
-            </div>
-        </form>
-    </div>
-</div>
-{% endblock %}
+    <script>
+        let currentOrderId = null;
 
-{% block extra_scripts %}
-<script>
-let currentOrderId = null;
-
-function refreshOrders() {
-    location.reload();
-}
-
-function updateStatus(orderId, status) {
-    if (!confirm(`Change order ${orderId} to ${status}?`)) return;
-    
-    fetch(`/api/orders/${orderId}/status`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: status })
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.success) {
-            alert('✅ ' + data.message);
-            location.reload();
-        } else {
-            alert('❌ Error: ' + data.error);
+        function updateStatus(orderId, status) {
+            if (!confirm(`Change order ${orderId} to ${status}?`)) return;
+            
+            fetch(`/api/orders/${orderId}/status`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: status })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    alert('✅ ' + data.message);
+                    location.reload();
+                } else {
+                    alert('❌ Error: ' + data.error);
+                }
+            })
+            .catch(err => alert('Error: ' + err.message));
         }
-    })
-    .catch(err => alert('Error: ' + err.message));
-}
 
-function updatePayment(orderId, status) {
-    if (!confirm(`Mark order ${orderId} as ${status}?`)) return;
-    
-    fetch(`/api/orders/${orderId}/payment`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ payment_status: status })
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.success) {
-            alert('✅ ' + data.message);
-            location.reload();
-        } else {
-            alert('❌ Error: ' + data.error);
+        function updatePayment(orderId, status) {
+            if (!confirm(`Mark order ${orderId} as ${status}?`)) return;
+            
+            fetch(`/api/orders/${orderId}/payment`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ payment_status: status })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    alert('✅ ' + data.message);
+                    location.reload();
+                } else {
+                    alert('❌ Error: ' + data.error);
+                }
+            })
+            .catch(err => alert('Error: ' + err.message));
         }
-    })
-    .catch(err => alert('Error: ' + err.message));
-}
 
-function completeOrder(orderId) {
-    currentOrderId = orderId;
-    document.getElementById('enhanceOrderId').value = orderId;
-    document.getElementById('enhanceModal').classList.remove('hidden');
-}
-
-function closeModal() {
-    document.getElementById('enhanceModal').classList.add('hidden');
-    document.getElementById('enhanceFileInput').value = '';
-    document.getElementById('enhancePreview').classList.add('hidden');
-}
-
-// Enhanced photo upload preview
-document.getElementById('enhanceFileInput').addEventListener('change', function(e) {
-    if (this.files.length > 0) {
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-            document.getElementById('enhancePreviewImg').src = ev.target.result;
-            document.getElementById('enhancePreview').classList.remove('hidden');
-        };
-        reader.readAsDataURL(this.files[0]);
-    }
-});
-
-// Enhanced photo upload form
-document.getElementById('enhanceForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    const formData = new FormData(this);
-    const orderId = document.getElementById('enhanceOrderId').value;
-    
-    fetch(`/api/orders/${orderId}/enhance`, {
-        method: 'POST',
-        body: formData
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.success) {
-            alert('✅ ' + data.message);
-            closeModal();
-            location.reload();
-        } else {
-            alert('❌ Error: ' + data.error);
+        function openEnhanceModal(orderId) {
+            currentOrderId = orderId;
+            document.getElementById('enhanceOrderId').value = orderId;
+            document.getElementById('enhanceModal').style.display = 'flex';
         }
-    })
-    .catch(err => alert('Error: ' + err.message));
-});
 
-// Click to upload enhanced photo
-document.querySelector('.drop-zone-enhanced').addEventListener('click', function() {
-    document.getElementById('enhanceFileInput').click();
-});
+        function closeModal() {
+            document.getElementById('enhanceModal').style.display = 'none';
+            document.getElementById('enhanceFileInput').value = '';
+            document.getElementById('enhancePreview').style.display = 'none';
+        }
 
-// Close modal on outside click
-document.getElementById('enhanceModal').addEventListener('click', function(e) {
-    if (e.target === this) closeModal();
-});
-</script>
-{% endblock %}
+        document.getElementById('enhanceFileInput').addEventListener('change', function(e) {
+            if (this.files.length > 0) {
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    document.getElementById('enhancePreviewImg').src = ev.target.result;
+                    document.getElementById('enhancePreview').style.display = 'block';
+                };
+                reader.readAsDataURL(this.files[0]);
+            }
+        });
+
+        document.getElementById('enhanceForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const orderId = document.getElementById('enhanceOrderId').value;
+            
+            const submitBtn = this.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Uploading...';
+            
+            fetch(`/api/orders/${orderId}/enhance`, {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    alert('✅ ' + data.message);
+                    closeModal();
+                    location.reload();
+                } else {
+                    alert('❌ Error: ' + data.error);
+                }
+            })
+            .catch(err => alert('Error: ' + err.message))
+            .finally(() => {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-upload mr-2"></i> Upload';
+            });
+        });
+
+        // Close modal on outside click
+        document.getElementById('enhanceModal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+    </script>
+</body>
+</html>
