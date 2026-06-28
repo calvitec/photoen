@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Allison Beauty — Premium Skincare</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        :root {
+            --rose: #fce4ec;
+            --pink: #e91e63;
+            --purple: #9c27b0;
+            --gold: #f6c445;
+        }
+        .gradient-hero { background: linear-gradient(135deg, #fce4ec 0%, #f3e5f5 25%, #e8eaf6 55%, #e0f7fa 85%, #fce4ec 100%); position: relative; overflow: hidden; }
+        .glass-nav { background: rgba(255,255,255,0.88); backdrop-filter: blur(24px); border-bottom: 1px solid rgba(255,255,255,0.2); transition: all 0.3s ease; }
+        .glass-nav.scrolled { background: rgba(255,255,255,0.96); box-shadow: 0 4px 40px rgba(0,0,0,0.08); }
+        .btn-primary { background: linear-gradient(135deg, #e91e63 0%, #9c27b0 100%); transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative; overflow: hidden; border: none; cursor: pointer; }
+        .btn-primary:hover { transform: translateY(-3px) scale(1.02); box-shadow: 0 20px 50px rgba(233,30,99,0.35); }
+        .btn-primary::after { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: linear-gradient(45deg, transparent 40%, rgba(255,255,255,0.12) 50%, transparent 60%); transform: rotate(45deg) translateX(-100%); transition: all 0.6s ease; }
+        .btn-primary:hover::after { transform: rotate(45deg) translateX(100%); }
+
+        .product-card {
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            cursor: pointer;
+            border: 1px solid rgba(0,0,0,0.04);
+            background: white;
+            position: relative;
+            overflow: visible;
+        }
+        .product-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, #e91e63, #9c27b0, #f6c445); opacity: 0; transition: opacity 0.4s ease; border-radius: 24px 24px 0 0; }
+        .product-card:hover::before { opacity: 1; }
+        .product-card:hover { transform: translateY(-12px) scale(1.01); box-shadow: 0 30px 70px rgba(233,30,99,0.10); border-color: rgba(233,30,99,0.08); }
+
+        .product-image-wrapper {
+            position: relative;
+            width: 100%;
+            margin-bottom: 1rem;
+        }
+        .product-image-container {
+            overflow: hidden;
+            border-radius: 16px;
+            background: linear-gradient(135deg, #f8f9fa, #f1f3f5);
+            width: 100%;
+            height: 220px;
+        }
+        .product-image-container.tall { height: 260px; }
+        .product-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .product-card:hover .product-image { transform: scale(1.08); }
+
+        .product-badge {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 10;
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 5px 12px;
+            border-radius: 999px;
+            color: white;
+            white-space: nowrap;
+            pointer-events: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        .badge-best    { background: linear-gradient(135deg, #ff6b6b, #ee5a24); }
+        .badge-new     { background: linear-gradient(135deg, #48dbfb, #0abde3); }
+        .badge-trending{ background: linear-gradient(135deg, #f6c445, #f093fb); }
+        .badge-editor  { background: linear-gradient(135deg, #7c4dff, #651fff); }
+
+        .cart-count { background: linear-gradient(135deg, #e91e63, #9c27b0); color: white; border-radius: 50%; padding: 2px 8px; font-size: 10px; font-weight: 700; min-width: 20px; text-align: center; box-shadow: 0 2px 10px rgba(233,30,99,0.3); }
+        .section-title { font-family: 'Playfair Display', serif; }
+        .hero-title { font-family: 'Playfair Display', serif; font-size: 4.5rem; line-height: 1.05; }
+        @media (max-width: 768px) { .hero-title { font-size: 2.8rem; } .section-title { font-size: 2.5rem; } }
+        .animate-float { animation: float 6s ease-in-out infinite; }
+        @keyframes float { 0%,100% { transform: translateY(0px); } 50% { transform: translateY(-20px); } }
+        .fade-slide { opacity: 0; transform: translateY(30px); animation: fadeSlide 0.8s ease-out forwards; }
+        @keyframes fadeSlide { 0% { opacity: 0; transform: translateY(30px); } 100% { opacity: 1; transform: translateY(0); } }
+        .toast { position: fixed; bottom: 30px; right: 30px; z-index: 9999; background: white; box-shadow: 0 20px 60px rgba(0,0,0,0.15); border-radius: 20px; padding: 16px 24px; animation: slideIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); border: 1px solid rgba(0,0,0,0.04); }
+        @keyframes slideIn { 0% { transform: translateX(100px); opacity: 0; } 100% { transform: translateX(0); opacity: 1; } }
+        .hidden { display: none; }
+        .marquee-text { animation: marquee 25s linear infinite; white-space: nowrap; }
+        @keyframes marquee { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
+        .nav-link { position: relative; font-weight: 500; color: #4a5568; transition: color 0.3s; }
+        .nav-link::after { content: ''; position: absolute; bottom: -6px; left: 50%; width: 0; height: 2.5px; background: linear-gradient(90deg, #e91e63, #9c27b0); transition: all 0.3s ease; transform: translateX(-50%); border-radius: 2px; }
+        .nav-link:hover { color: #e91e63; }
+        .nav-link:hover::after { width: 80%; }
+        .category-pill { background: rgba(233,30,99,0.04); border: 1px solid rgba(233,30,99,0.06); transition: all 0.3s ease; cursor: pointer; font-weight: 500; color: #4a5568; }
+        .category-pill:hover { background: linear-gradient(135deg, #e91e63, #9c27b0); color: white; border-color: transparent; transform: translateY(-2px); box-shadow: 0 8px 25px rgba(233,30,99,0.2); }
+        .category-pill.active { background: linear-gradient(135deg, #e91e63, #9c27b0); color: white; border-color: transparent; }
+        .bundle-card { border: 2px solid transparent; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); cursor: pointer; }
+        .bundle-card:hover { border-color: #e91e63; transform: translateY(-8px); box-shadow: 0 25px 60px rgba(233,30,99,0.08); }
+        .bundle-card.popular { border-color: #f6c445; background: linear-gradient(135deg, rgba(246,196,69,0.04), rgba(246,196,69,0.01)); }
+        .social-icon { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 50%; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08); transition: all 0.3s ease; color: rgba(255,255,255,0.5); }
+        .social-icon:hover { background: linear-gradient(135deg, #e91e63, #9c27b0); color: white; transform: translateY(-4px); box-shadow: 0 10px 30px rgba(233,30,99,0.3); }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: linear-gradient(135deg, #e91e63, #9c27b0); border-radius: 4px; }
+        .testimonial-card { transition: all 0.3s ease; border: 1px solid rgba(0,0,0,0.04); }
+        .testimonial-card:hover { transform: translateY(-4px); box-shadow: 0 20px 50px rgba(0,0,0,0.06); }
+        .newsletter-input { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08); border-radius: 50px; padding: 12px 20px; color: white; transition: all 0.3s ease; width: 100%; }
+        .newsletter-input::placeholder { color: rgba(255,255,255,0.3); }
+        .newsletter-input:focus { outline: none; border-color: #e91e63; box-shadow: 0 0 0 4px rgba(233,30,99,0.1); }
+        .newsletter-btn { background: linear-gradient(135deg, #e91e63, #9c27b0); border-radius: 50px; padding: 12px 28px; color: white; border: none; cursor: pointer; transition: all 0.3s ease; font-weight: 600; }
+        .newsletter-btn:hover { transform: scale(1.02); box-shadow: 0 10px 30px rgba(233,30,99,0.3); }
+        .footer-link { color: rgba(255,255,255,0.4); transition: all 0.3s ease; text-decoration: none; font-size: 0.875rem; }
+        .footer-link:hover { color: white; transform: translateX(4px); }
+        .hero-blob { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.15; pointer-events: none; }
+        .img-fallback { background: linear-gradient(135deg, #fce4ec 0%, #f3e5f5 100%); }
+    </style>
+</head>
+<body>
+    <!-- ===== TOP BAR ===== -->
+    <div class="bg-gradient-to-r from-pink-600 via-purple-600 to-pink-600 text-white text-xs py-2 text-center overflow-hidden relative z-50">
+        <div class="marquee-text inline-block font-medium tracking-wide">
+            ✨ Free Shipping on orders over $35 • 30-Day Money Back Guarantee • Subscribe & Save 15% • Join Our Rewards Program ✨
+        </div>
+    </div>
+
+    <!-- ===== NAVIGATION ===== -->
+    <nav class="glass-nav fixed top-0 left-0 right-0 z-50" id="navbar">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-20">
+                <a href="/" class="flex items-center gap-3 group">
+                    <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center text-white font-bold text-xl shadow-lg group-hover:shadow-2xl transition-all duration-300 group-hover:scale-105">AB</div>
+                    <div>
+                        <div class="text-2xl font-bold tracking-tight text-gray-800">allison<span class="text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-purple-600">beauty</span></div>
+                        <div class="text-[10px] text-gray-400 tracking-[0.2em] uppercase font-medium">Premium Skincare</div>
+                    </div>
+                </a>
+                <div class="hidden lg:flex items-center gap-8">
+                    <a href="#shop" class="nav-link">Shop</a>
+                    <a href="#bundles" class="nav-link">Bundles</a>
+                    <a href="#new" class="nav-link">New</a>
+                    <a href="#about" class="nav-link">About</a>
+                    <a href="#reviews" class="nav-link">Reviews</a>
+                </div>
+                <div class="flex items-center gap-4">
+                    <button class="hidden md:block text-gray-400 hover:text-pink-500 transition text-lg"><i class="fas fa-search"></i></button>
+                    <button class="hidden md:block text-gray-400 hover:text-pink-500 transition text-lg relative">
+                        <i class="far fa-heart"></i>
+                        <span class="absolute -top-1 -right-2 text-[8px] bg-pink-500 text-white rounded-full px-1.5 py-0.5 leading-none">3</span>
+                    </button>
+                    <a href="/cart" class="relative text-gray-700 hover:text-pink-500 transition text-xl">
+                        <i class="fas fa-shopping-bag"></i>
+                        <span class="cart-count absolute -top-2 -right-3 text-xs" id="cartCount">0</span>
+                    </a>
+                    <button onclick="document.getElementById('shop').scrollIntoView({behavior:'smooth'})" class="hidden md:block px-6 py-2.5 rounded-full btn-primary text-white font-semibold text-sm shadow-md hover:shadow-xl">Shop Now</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ===== HERO SECTION ===== -->
+    <section class="gradient-hero min-h-[85vh] flex items-center pt-36 relative">
+        <div class="hero-blob w-[600px] h-[600px] bg-pink-300 top-[-200px] right-[-100px]"></div>
+        <div class="hero-blob w-[400px] h-[400px] bg-purple-300 bottom-[-100px] left-[-100px]"></div>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10">
+            <div class="grid lg:grid-cols-2 gap-16 items-center">
+                <div class="fade-slide">
+                    <div class="inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm px-5 py-2.5 rounded-full text-sm text-pink-600 font-semibold mb-6 border border-pink-100 shadow-sm">
+                        <span class="w-2.5 h-2.5 bg-pink-500 rounded-full animate-pulse"></span> Discover Your Glow
+                    </div>
+                    <h1 class="hero-title text-gray-800 leading-[1.05]">Radiant <br><span class="text-transparent bg-clip-text bg-gradient-to-r from-pink-400 via-purple-500 to-pink-400">Skin Starts Here</span></h1>
+                    <p class="text-gray-500 text-lg mt-4 max-w-md leading-relaxed">Clean, effective skincare formulated with love. Every product is dermatologist-tested, cruelty-free, and made to make you glow.</p>
+                    <div class="flex flex-wrap gap-4 mt-8">
+                        <a href="#shop" class="px-8 py-4 rounded-full btn-primary text-white font-bold shadow-lg flex items-center gap-2"><i class="fas fa-shopping-bag"></i> Shop Now</a>
+                        <a href="#bundles" class="px-8 py-4 rounded-full border-2 border-gray-200 text-gray-600 font-bold hover:border-pink-400 hover:text-pink-500 transition-all flex items-center gap-2"><i class="fas fa-gift"></i> View Bundles</a>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-6 mt-8 text-gray-400 text-sm">
+                        <div class="flex items-center gap-2"><span class="text-2xl">🌟</span> 50K+ Happy Customers</div>
+                        <div class="flex items-center gap-2"><span class="text-2xl">🌿</span> Cruelty-Free</div>
+                        <div class="flex items-center gap-2"><span class="text-2xl">💧</span> Dermatologist Tested</div>
+                    </div>
+                </div>
+                <div class="relative animate-float hidden lg:block">
+                    <div class="grid grid-cols-2 gap-5">
+                        <div class="bg-white/85 backdrop-blur-sm rounded-3xl p-5 shadow-2xl border border-white/30 hover:shadow-3xl transition-all duration-300 hover:scale-105">
+                            <div class="product-image-container img-fallback mb-4">
+                                <img src="https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=400&h=400&fit=crop&auto=format" alt="Glow Serum" class="product-image" loading="lazy" onerror="this.style.display='none'">
+                            </div>
+                            <p class="font-bold text-gray-800">Glow Serum</p>
+                            <p class="text-gray-400 text-sm">Vitamin C + Hyaluronic</p>
+                            <div class="flex items-center gap-2 mt-2">
+                                <span class="text-xl font-bold text-gray-800">$34.99</span>
+                                <span class="text-xs bg-green-100 text-green-600 px-2 py-0.5 rounded-full font-semibold">Best Seller</span>
+                            </div>
+                            <button onclick="addToCart('glow_serum')" class="mt-3 w-full py-3 rounded-xl btn-primary text-white font-semibold text-sm"><i class="fas fa-plus mr-1"></i> Add to Bag</button>
+                        </div>
+                        <div class="bg-white/85 backdrop-blur-sm rounded-3xl p-5 shadow-2xl border border-white/30 mt-10 hover:shadow-3xl transition-all duration-300 hover:scale-105">
+                            <div class="product-image-container img-fallback mb-4">
+                                <img src="https://images.unsplash.com/photo-1556228720-195a672e8a03?w=400&h=400&fit=crop&auto=format" alt="Hydrating Cream" class="product-image" loading="lazy" onerror="this.style.display='none'">
+                            </div>
+                            <p class="font-bold text-gray-800">Hydrating Cream</p>
+                            <p class="text-gray-400 text-sm">Deep Moisture</p>
+                            <div class="flex items-center gap-2 mt-2">
+                                <span class="text-xl font-bold text-gray-800">$28.99</span>
+                                <span class="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full font-semibold">New</span>
+                            </div>
+                            <button onclick="addToCart('hydrating_cream')" class="mt-3 w-full py-3 rounded-xl btn-primary text-white font-semibold text-sm"><i class="fas fa-plus mr-1"></i> Add to Bag</button>
+                        </div>
+                    </div>
+                    <div class="absolute -bottom-6 -left-6 bg-white/90 backdrop-blur-sm rounded-2xl px-6 py-4 shadow-xl border border-white/50">
+                        <div class="flex items-center gap-2"><span class="text-yellow-400 text-sm">★★★★★</span><span class="text-gray-800 font-bold text-sm">4.9</span><span class="text-gray-400 text-xs">(50K+ reviews)</span></div>
+                        <p class="text-gray-600 text-sm font-medium">"Best skincare I've ever used!"</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== CATEGORY PILLS ===== -->
+    <section class="py-8 bg-white border-b border-gray-100 sticky top-20 z-40">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex flex-wrap justify-center gap-3">
+                <span class="category-pill active px-6 py-2.5 rounded-full text-sm">All Products</span>
+                <span class="category-pill px-6 py-2.5 rounded-full text-sm">Serums</span>
+                <span class="category-pill px-6 py-2.5 rounded-full text-sm">Moisturizers</span>
+                <span class="category-pill px-6 py-2.5 rounded-full text-sm">Sun Care</span>
+                <span class="category-pill px-6 py-2.5 rounded-full text-sm">Masks</span>
+                <span class="category-pill px-6 py-2.5 rounded-full text-sm">Cleansers</span>
+                <span class="category-pill px-6 py-2.5 rounded-full text-sm">Toners</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== BEST SELLERS ===== -->
+    <section id="shop" class="py-20 px-4 bg-white">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center mb-14">
+                <span class="text-pink-500 text-sm font-semibold tracking-[0.2em] uppercase">Our Bestsellers</span>
+                <h2 class="section-title text-5xl font-bold text-gray-800 mt-2">Customer Favorites</h2>
+                <p class="text-gray-400 mt-3 max-w-md mx-auto">The products our customers can't stop raving about</p>
+            </div>
+            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+
+                <!-- Glow Serum -->
+                <div class="product-card rounded-3xl p-6 text-center">
+                    <div class="product-image-wrapper">
+                        <span class="product-badge badge-best">⭐ Best Seller</span>
+                        <div class="product-image-container tall img-fallback">
+                            <img src="https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=400&h=400&fit=crop&auto=format" alt="Glow Serum" class="product-image" loading="lazy" onerror="this.style.display='none'">
+                        </div>
+                    </div>
+                    <h3 class="font-bold text-gray-800 text-lg">Glow Repair Serum</h3>
+                    <p class="text-gray-400 text-sm mt-2">Powerful vitamin C serum for radiant skin</p>
+                    <div class="flex items-center justify-center gap-1 mt-3 text-sm">
+                        <i class="fas fa-star text-yellow-400"></i><i class="fas fa-star text-yellow-400"></i><i class="fas fa-star text-yellow-400"></i><i class="fas fa-star text-yellow-400"></i><i class="fas fa-star text-yellow-400"></i>
+                        <span class="text-gray-400 text-xs ml-1">(234)</span>
+                    </div>
+                    <div class="mt-4"><span class="text-2xl font-bold text-gray-800">$34.99</span></div>
+                    <button onclick="addToCart('glow_serum')" class="mt-4 w-full py-3.5 rounded-xl btn-primary text-white font-semibold"><i class="fas fa-plus mr-2"></i> Add to Bag</button>
+                </div>
+
+                <!-- Hydrating Cream -->
+                <div class="product-card rounded-3xl p-6 text-center">
+                    <div class="product-image-wrapper">
+                        <span class="product-badge badge-new">🌟 New</span>
+                        <div class="product-image-container tall img-fallback">
+                            <img src="https://images.unsplash.com/photo-1556228720-195a672e8a03?w=400&h=400&fit=crop&auto=format" alt="Hydrating Cream" class="product-image" loading="lazy" onerror="this.style.display='none'">
+                        </div>
+                    </div>
+                    <h3 class="font-bold text-gray-800 text-lg">Hydrating Moisture Cream</h3>
+                    <p class="text-gray-400 text-sm mt-2">Deep hydration with hyaluronic acid</p>
+                    <div class="flex items-center justify-center gap-1 mt-3 text-sm">
+                        <i class="fas fa-star text-yellow-400"></i><i class="fas fa-star text-yellow-400"></i><i class="fas fa-star text-yellow-400"></i><i class="fas fa-star text-yellow-400"></i><i class="fas fa-star text-yellow-400"></i>
+                        <span class="text-gray-400 text-xs ml-1">(189)</span>
+                    </div>
+                    <div class="mt-4"><span class="text-2xl font-bold text-gray-800">$28.99</span></div>
+                    <button onclick="addToCart('hydrating_cream')" class="mt-4 w-full py-3.5 rounded-xl btn-primary text-white font-semibold"><i class="fas fa-plus mr-2"></i> Add to Bag</button>
+                </div>
+
+                <!-- Peptide Cream -->
+                <div class="product-card rounded-3xl p-6 text-center">
+                    <div class="product-image-wrapper">
+                        <span class="product-badge badge-new">🌟 New</span>
+                        <div class="product-image-container tall img-fallback">
+                            <img src="https://images.unsplash.com/photo-1612817288484-6f916006741a?w=400&h=400&fit=crop&auto=format" alt="Peptide Cream" class="product-image" loading="lazy" onerror="this.style.display='none'">
+                        </div>
+                    </div>
+                    <h3 class="font-bold text-gray-800 text-lg">Peptide Firming Cream</h3>
+                    <p class="text-gray-400 text-sm mt-2">Advanced peptides for firming and lifting</p>
+                    <div class="flex items-center justify-center gap-1 mt-3 text-sm">
+                        <i class="fas fa-star text-yellow-400"></i><i class="fas fa-star text-yellow-400"></i><i class="fas fa-star text-yellow-400"></i><i class="fas fa-star text-yellow-400"></i><i class="fas fa-star text-yellow-400"></i>
+                        <span class="text-gray-400 text-xs ml-1">(167)</span>
+                    </div>
+                    <div class="mt-4"><span class="text-2xl font-bold text-gray-800">$38.99</span></div>
+                    <button onclick="addToCart('peptide_cream')" class="mt-4 w-full py-3.5 rounded-xl btn-primary text-white font-semibold"><i class="fas fa-plus mr-2"></i> Add to Bag</button>
+                </div>
+
+                <!-- Rose Toner -->
+                <div class="product-card rounded-3xl p-6 text-center">
+                    <div class="product-image-wrapper">
+                        <span class="product-badge badge-trending">🔥 Trending</span>
+                        <div class="product-image-container tall img-fallback">
+                            <img src="https://images.unsplash.com/photo-1586611292717-f828b167408c?w=400&h=400&fit=crop&auto=format" alt="Rose Toner" class="product-image" loading="lazy" onerror="this.style.display='none'">
+                        </div>
+                    </div>
+                    <h3 class="font-bold text-gray-800 text-lg">Rose Hydrating Toner</h3>
+                    <p class="text-gray-400 text-sm mt-2">Gentle rose-infused hydrating toner</p>
+                    <div class="flex items-center justify-center gap-1 mt-3 text-sm">
+                        <i class="fas fa-star text-yellow-400"></i><i class="fas fa-star text-yellow-400"></i><i class="fas fa-star text-yellow-400"></i><i class="fas fa-star text-yellow-400"></i><i class="fas fa-star text-yellow-400"></i>
+                        <span class="text-gray-400 text-xs ml-1">(145)</span>
+                    </div>
+                    <div class="mt-4"><span class="text-2xl font-bold text-gray-800">$21.99</span></div>
+                    <button onclick="addToCart('rose_toner')" class="mt-4 w-full py-3.5 rounded-xl btn-primary text-white font-semibold"><i class="fas fa-plus mr-2"></i> Add to Bag</button>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== ALL PRODUCTS ===== -->
+    <section id="new" class="py-20 px-4 bg-gray-50">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center mb-14">
+                <span class="text-pink-500 text-sm font-semibold tracking-[0.2em] uppercase">Shop All</span>
+                <h2 class="section-title text-5xl font-bold text-gray-800 mt-2">Complete Collection</h2>
+                <p class="text-gray-400 mt-3">Every product designed for your best skin</p>
+            </div>
+            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {% for id, product in all_products.items() %}
+                <div class="bg-white rounded-3xl p-6 text-center shadow-sm hover:shadow-2xl transition-all duration-300 border border-gray-50 hover:border-pink-200">
+                    <div class="product-image-container img-fallback mb-4">
+                        <img src="{{ product.image }}" alt="{{ product.name }}" class="product-image" loading="lazy" onerror="this.style.display='none'">
+                    </div>
+                    <h3 class="font-bold text-gray-800">{{ product.name }}</h3>
+                    <p class="text-gray-400 text-xs mt-1">{{ product.category }}</p>
+                    <div class="flex items-center justify-center gap-0.5 mt-2 text-sm">
+                        {% for i in range(5) %}
+                            {% if i < product.rating|round(0, 'floor') %}
+                                <i class="fas fa-star text-yellow-400"></i>
+                            {% else %}
+                                <i class="far fa-star text-gray-300"></i>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    <div class="mt-3"><span class="text-xl font-bold text-gray-800">${{ product.price }}</span></div>
+                    <button onclick="addToCart('{{ id }}')" class="mt-4 w-full py-2.5 rounded-xl bg-gray-100 hover:bg-pink-100 text-gray-700 hover:text-pink-600 font-semibold transition text-sm"><i class="fas fa-plus mr-1"></i> Add to Bag</button>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== BUNDLES ===== -->
+    <section id="bundles" class="py-20 px-4 bg-white">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center mb-14">
+                <span class="text-pink-500 text-sm font-semibold tracking-[0.2em] uppercase">Save More</span>
+                <h2 class="section-title text-5xl font-bold text-gray-800 mt-2">Perfect Bundles</h2>
+                <p class="text-gray-400 mt-3">Complete routines at an incredible value</p>
+            </div>
+            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {% for id, bundle in bundles.items() %}
+                <div class="bundle-card {% if bundle.popular %}popular{% endif %} bg-gray-50 rounded-3xl p-6 text-center">
+                    {% if bundle.popular %}
+                    <span class="text-xs font-bold text-yellow-600 bg-yellow-50 px-3 py-1.5 rounded-full inline-block mb-3 border border-yellow-200">⭐ Best Value</span>
+                    {% endif %}
+                    <div class="product-image-container img-fallback mb-4">
+                        <img src="{{ bundle.image }}" alt="{{ bundle.name }}" class="product-image" loading="lazy" onerror="this.style.display='none'">
+                    </div>
+                    <h3 class="font-bold text-gray-800 text-lg">{{ bundle.name }}</h3>
+                    <p class="text-gray-400 text-sm mt-1">{{ bundle.products|length }} Products Included</p>
+                    <div class="mt-3">
+                        <span class="text-2xl font-bold text-gray-800">${{ bundle.price }}</span>
+                        <span class="text-gray-400 text-sm line-through ml-2">${{ "%.2f"|format(bundle.price + bundle.savings) }}</span>
+                        <br>
+                        <span class="text-green-500 text-sm font-semibold">Save ${{ bundle.savings }}</span>
+                    </div>
+                    <button onclick="addToCart('{{ id }}')" class="mt-4 w-full py-3.5 rounded-xl btn-primary text-white font-semibold"><i class="fas fa-plus mr-2"></i> Add Bundle</button>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== WHY US ===== -->
+    <section id="about" class="py-20 px-4 bg-gradient-to-b from-gray-50 to-white">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center mb-14">
+                <span class="text-pink-500 text-sm font-semibold tracking-[0.2em] uppercase">Why Allison Beauty</span>
+                <h2 class="section-title text-5xl font-bold text-gray-800 mt-2">Clean. Effective. Loved.</h2>
+            </div>
+            <div class="grid md:grid-cols-4 gap-8">
+                <div class="text-center group">
+                    <div class="w-20 h-20 mx-auto rounded-2xl bg-pink-50 group-hover:bg-pink-100 flex items-center justify-center text-4xl mb-4 transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg">🌿</div>
+                    <h3 class="font-bold text-gray-800 text-lg">Clean Ingredients</h3>
+                    <p class="text-gray-400 text-sm mt-2 leading-relaxed">Paraben-free, sulfate-free, and cruelty-free formulas</p>
+                </div>
+                <div class="text-center group">
+                    <div class="w-20 h-20 mx-auto rounded-2xl bg-purple-50 group-hover:bg-purple-100 flex items-center justify-center text-4xl mb-4 transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg">🔬</div>
+                    <h3 class="font-bold text-gray-800 text-lg">Dermatologist Tested</h3>
+                    <p class="text-gray-400 text-sm mt-2 leading-relaxed">Clinically tested for safety and efficacy</p>
+                </div>
+                <div class="text-center group">
+                    <div class="w-20 h-20 mx-auto rounded-2xl bg-blue-50 group-hover:bg-blue-100 flex items-center justify-center text-4xl mb-4 transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg">❤️</div>
+                    <h3 class="font-bold text-gray-800 text-lg">Loved by Thousands</h3>
+                    <p class="text-gray-400 text-sm mt-2 leading-relaxed">Over 50,000 happy customers worldwide</p>
+                </div>
+                <div class="text-center group">
+                    <div class="w-20 h-20 mx-auto rounded-2xl bg-yellow-50 group-hover:bg-yellow-100 flex items-center justify-center text-4xl mb-4 transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg">♻️</div>
+                    <h3 class="font-bold text-gray-800 text-lg">Sustainable</h3>
+                    <p class="text-gray-400 text-sm mt-2 leading-relaxed">Eco-friendly packaging and responsible sourcing</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== TESTIMONIALS ===== -->
+    <section id="reviews" class="py-20 px-4 bg-white">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center mb-14">
+                <span class="text-pink-500 text-sm font-semibold tracking-[0.2em] uppercase">Testimonials</span>
+                <h2 class="section-title text-5xl font-bold text-gray-800 mt-2">What Our Customers Say</h2>
+            </div>
+            <div class="grid md:grid-cols-3 gap-6">
+                <div class="testimonial-card bg-gray-50 rounded-3xl p-8">
+                    <div class="flex text-yellow-400 text-sm mb-3">★★★★★</div>
+                    <p class="text-gray-600 italic leading-relaxed">"This serum completely transformed my skin! I've never felt more confident without makeup."</p>
+                    <div class="mt-4 flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-pink-200 to-pink-300 flex items-center justify-center font-bold text-pink-600 text-lg flex-shrink-0">SM</div>
+                        <div><p class="font-semibold text-gray-800">Sarah M.</p><p class="text-gray-400 text-xs">Verified Buyer</p></div>
+                    </div>
+                </div>
+                <div class="testimonial-card bg-gray-50 rounded-3xl p-8">
+                    <div class="flex text-yellow-400 text-sm mb-3">★★★★★</div>
+                    <p class="text-gray-600 italic leading-relaxed">"The hydrating cream is so moisturizing! My skin feels amazing."</p>
+                    <div class="mt-4 flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-purple-200 to-purple-300 flex items-center justify-center font-bold text-purple-600 text-lg flex-shrink-0">JK</div>
+                        <div><p class="font-semibold text-gray-800">Jessica K.</p><p class="text-gray-400 text-xs">Verified Buyer</p></div>
+                    </div>
+                </div>
+                <div class="testimonial-card bg-gray-50 rounded-3xl p-8">
+                    <div class="flex text-yellow-400 text-sm mb-3">★★★★★</div>
+                    <p class="text-gray-600 italic leading-relaxed">"The rose toner is so gentle and hydrating. My skin feels amazing!"</p>
+                    <div class="mt-4 flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-200 to-blue-300 flex items-center justify-center font-bold text-blue-600 text-lg flex-shrink-0">AL</div>
+                        <div><p class="font-semibold text-gray-800">Amanda L.</p><p class="text-gray-400 text-xs">Verified Buyer</p></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== CTA SECTION ===== -->
+    <section class="py-20 px-4 bg-gradient-to-r from-pink-500 via-purple-500 to-pink-500 relative overflow-hidden">
+        <div class="hero-blob w-[500px] h-[500px] bg-white/10 top-[-200px] right-[-100px]"></div>
+        <div class="hero-blob w-[300px] h-[300px] bg-white/10 bottom-[-100px] left-[-100px]"></div>
+        <div class="max-w-4xl mx-auto text-center relative z-10">
+            <span class="text-white/80 text-sm font-semibold tracking-[0.2em] uppercase">Join the Glow Community</span>
+            <h2 class="section-title text-5xl font-bold text-white mt-2">Ready to Glow?</h2>
+            <p class="text-white/80 text-lg mt-4 max-w-2xl mx-auto">Join thousands of happy customers and discover your best skin yet.</p>
+            <button onclick="document.getElementById('shop').scrollIntoView({behavior:'smooth'})" class="mt-8 px-12 py-4 rounded-full bg-white text-pink-600 font-bold text-lg shadow-xl hover:shadow-2xl transition-all transform hover:scale-105 inline-flex items-center gap-3"><i class="fas fa-shopping-bag"></i> Shop Now</button>
+        </div>
+    </section>
+<!-- ===== FOOTER ===== -->
+<footer class="bg-gray-900 text-white/60 pt-20 pb-6 px-4">
+    <div class="max-w-7xl mx-auto">
+        <!-- Main Footer Grid -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-10 md:gap-12 lg:gap-16 pb-12 border-b border-gray-800/60">
+            
+            <!-- Brand Column -->
+            <div class="col-span-2 md:col-span-1">
+                <div class="flex items-center gap-3 mb-5">
+                    <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-pink-500/20 flex-shrink-0">AB</div>
+                    <span class="text-2xl font-bold text-white tracking-tight">allison<span class="text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-purple-400">beauty</span></span>
+                </div>
+                <p class="text-sm leading-relaxed text-gray-400 max-w-xs mb-6">Premium skincare for radiant, healthy skin. Clean, effective, and cruelty-free.</p>
+                <div class="flex gap-3">
+                    <a href="#" class="w-10 h-10 rounded-full bg-gray-800/50 hover:bg-pink-500/20 hover:text-pink-400 flex items-center justify-center text-gray-400 transition-all duration-300 hover:scale-110"><i class="fab fa-instagram"></i></a>
+                    <a href="#" class="w-10 h-10 rounded-full bg-gray-800/50 hover:bg-pink-500/20 hover:text-pink-400 flex items-center justify-center text-gray-400 transition-all duration-300 hover:scale-110"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#" class="w-10 h-10 rounded-full bg-gray-800/50 hover:bg-pink-500/20 hover:text-pink-400 flex items-center justify-center text-gray-400 transition-all duration-300 hover:scale-110"><i class="fab fa-tiktok"></i></a>
+                    <a href="#" class="w-10 h-10 rounded-full bg-gray-800/50 hover:bg-pink-500/20 hover:text-pink-400 flex items-center justify-center text-gray-400 transition-all duration-300 hover:scale-110"><i class="fab fa-youtube"></i></a>
+                    <a href="#" class="w-10 h-10 rounded-full bg-gray-800/50 hover:bg-pink-500/20 hover:text-pink-400 flex items-center justify-center text-gray-400 transition-all duration-300 hover:scale-110"><i class="fab fa-pinterest-p"></i></a>
+                </div>
+            </div>
+
+            <!-- Shop Column -->
+            <div>
+                <h4 class="text-white font-semibold text-sm uppercase tracking-wider mb-5">Shop</h4>
+                <ul class="space-y-3">
+                    <li><a href="#" class="text-sm text-gray-400 hover:text-white transition-colors duration-200">All Products</a></li>
+                    <li><a href="#" class="text-sm text-gray-400 hover:text-white transition-colors duration-200">Bundles</a></li>
+                    <li><a href="#" class="text-sm text-gray-400 hover:text-white transition-colors duration-200">Best Sellers</a></li>
+                    <li><a href="#" class="text-sm text-gray-400 hover:text-white transition-colors duration-200">New Arrivals</a></li>
+                    <li><a href="#" class="text-sm text-gray-400 hover:text-white transition-colors duration-200">Gift Cards</a></li>
+                </ul>
+            </div>
+
+            <!-- Support Column -->
+            <div>
+                <h4 class="text-white font-semibold text-sm uppercase tracking-wider mb-5">Support</h4>
+                <ul class="space-y-3">
+                    <li><a href="#" class="text-sm text-gray-400 hover:text-white transition-colors duration-200">Help Center</a></li>
+                    <li><a href="#" class="text-sm text-gray-400 hover:text-white transition-colors duration-200">Returns &amp; Refunds</a></li>
+                    <li><a href="#" class="text-sm text-gray-400 hover:text-white transition-colors duration-200">Shipping Info</a></li>
+                    <li><a href="#" class="text-sm text-gray-400 hover:text-white transition-colors duration-200">Track Order</a></li>
+                    <li><a href="#" class="text-sm text-gray-400 hover:text-white transition-colors duration-200">Contact Us</a></li>
+                </ul>
+            </div>
+
+            <!-- Newsletter Column -->
+            <div class="col-span-2 md:col-span-1">
+                <h4 class="text-white font-semibold text-sm uppercase tracking-wider mb-5">Stay Glowing ✨</h4>
+                <p class="text-sm text-gray-400 mb-4">Get 15% off your first order + exclusive updates</p>
+                <form class="flex flex-col gap-3">
+                    <input 
+                        type="email" 
+                        placeholder="Enter your email" 
+                        class="px-4 py-3 rounded-xl bg-gray-800/50 border border-gray-700/50 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-pink-500/50 focus:border-transparent transition-all duration-300"
+                    />
+                    <button 
+                        type="submit" 
+                        class="px-4 py-3 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 text-white font-semibold text-sm hover:shadow-lg hover:shadow-pink-500/25 hover:scale-[1.02] transition-all duration-300"
+                    >
+                        Subscribe
+                    </button>
+                </form>
+                <p class="text-xs text-gray-500 mt-3">No spam. Unsubscribe anytime.</p>
+            </div>
+        </div>
+
+        <!-- Bottom Bar -->
+        <div class="pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="flex flex-wrap items-center justify-center md:justify-start gap-4 md:gap-6 text-xs">
+                <a href="#" class="text-gray-500 hover:text-white transition-colors duration-200">Privacy Policy</a>
+                <span class="text-gray-700 hidden md:inline">|</span>
+                <a href="#" class="text-gray-500 hover:text-white transition-colors duration-200">Terms of Service</a>
+                <span class="text-gray-700 hidden md:inline">|</span>
+                <a href="#" class="text-gray-500 hover:text-white transition-colors duration-200">Cookie Policy</a>
+            </div>
+            <p class="text-xs text-gray-500 text-center">
+                © 2026 <span class="text-white/80 font-medium">Allison Stone LLC</span>. All rights reserved.
+            </p>
+        </div>
+    </div>
+</footer>
+    <!-- ===== TOAST ===== -->
+    <div id="toast" class="toast hidden max-w-sm">
+        <div class="flex items-center gap-3">
+            <span class="text-2xl">✅</span>
+            <p id="toastMessage" class="text-gray-800 font-semibold"></p>
+        </div>
+    </div>
+
+    <!-- ===== JAVASCRIPT ===== -->
+    <script>
+        function updateCartCount() {
+            const cart = JSON.parse(sessionStorage.getItem('cart') || '[]');
+            document.getElementById('cartCount').textContent = cart.length;
+        }
+        updateCartCount();
+
+        function addToCart(itemId) {
+            fetch('/add-to-cart/' + itemId, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(r => r.json())
+            .then(data => {
+                showToast(data.success ? 'Added to bag! 🎀' : data.message);
+                if (data.success) {
+                    const cart = JSON.parse(sessionStorage.getItem('cart') || '[]');
+                    cart.push(itemId);
+                    sessionStorage.setItem('cart', JSON.stringify(cart));
+                    updateCartCount();
+                }
+            })
+            .catch(() => showToast('Something went wrong'));
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMessage').textContent = message;
+            toast.classList.remove('hidden');
+            clearTimeout(window.toastTimeout);
+            window.toastTimeout = setTimeout(() => toast.classList.add('hidden'), 3000);
+        }
+
+        window.addEventListener('scroll', () => {
+            document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 50);
+        });
+
+        document.querySelectorAll('.category-pill').forEach(pill => {
+            pill.addEventListener('click', function() {
+                document.querySelectorAll('.category-pill').forEach(p => p.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CV Pro – Professional CV Builder by Calvin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@400;700&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet" />
+    <style>
+        :root{
+            --glass-bg: rgba(255,255,255,0.06);
+            --glass-border: rgba(255,255,255,0.08);
+            --soft-white: rgba(255,255,255,0.9);
+        }
+        * { font-family: 'Inter', sans-serif; }
+        body{ background: linear-gradient(135deg,#060617 0%, #0b1633 35%, #2b153b 70%); }
+        .gradient-hero { background: linear-gradient(135deg, rgba(24,24,42,0.8), rgba(35,18,62,0.7)); }
+        .glass-card { background: var(--glass-bg); backdrop-filter: blur(18px); border: 1px solid var(--glass-border); }
+        .glass-card-dark { background: rgba(255,255,255,0.96); backdrop-filter: blur(8px); }
+        .btn-gradient { background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%); transition: all 0.25s ease; }
+        .btn-gradient:hover { transform: translateY(-3px); box-shadow: 0 14px 40px rgba(118,75,162,0.24); }
+        .layout-card { transition: all 0.35s cubic-bezier(.2,.9,.2,1); cursor: pointer; border: 2px solid transparent; }
+        .layout-card:hover { transform: translateY(-6px) scale(1.02); box-shadow: 0 18px 50px rgba(16,24,40,0.45); }
+        .layout-card.active { border-color: rgba(255,255,255,0.12); box-shadow: 0 0 0 6px rgba(102,126,234,0.08); }
+        .spinner { border: 3px solid rgba(255,255,255,0.08); border-top: 3px solid #8b5cf6; border-radius: 50%; width: 44px; height: 44px; animation: spin 0.9s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        textarea:focus { box-shadow: 0 0 0 6px rgba(139,92,246,0.12); }
+        .hero-anim { background: linear-gradient(270deg,#0f172a,#1e293b,#4c1d95); background-size: 600% 600%; animation: GradientShift 12s ease infinite; }
+        @keyframes GradientShift { 0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%} }
+        .glass-nav{ background: linear-gradient(90deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02)); backdrop-filter: blur(8px); border-bottom: 1px solid rgba(255,255,255,0.04); }
+    </style>
+</head>
+<body class="min-h-screen text-white">
+    <!-- Navigation -->
+    <nav class="fixed top-0 left-0 right-0 z-50 glass-nav">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-lg">CP</div>
+                    <div>
+                        <div class="text-xl font-bold">CV <span class="text-transparent bg-clip-text bg-gradient-to-r from-purple-300 to-pink-300">Pro</span></div>
+                        <div class="text-xs text-white/40">Premium CV Builder</div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4">
+                    <a href="#howitworks" class="text-sm text-white/60 hover:text-white transition">How it works</a>
+                    <a href="#layouts" class="text-sm text-white/60 hover:text-white transition">Layouts</a>
+                    <button onclick="document.getElementById('cvForm').scrollIntoView({behavior:'smooth'})" class="px-4 py-2 rounded-full btn-gradient text-white font-semibold text-sm shadow-md">Get Started</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <header class="pt-24 pb-10 hero-anim">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h1 class="text-4xl md:text-5xl font-extrabold">Build a <span class="text-transparent bg-clip-text bg-gradient-to-r from-purple-300 to-pink-300">stunning</span> CV in minutes</h1>
+            <p class="mt-3 text-white/70 max-w-2xl mx-auto">Premium designs, polished interactions, and instant PDF downloads — crafted for professionals who mean business.</p>
+            <div class="mt-6 flex items-center justify-center gap-3">
+                <button onclick="document.getElementById('cvForm').scrollIntoView({behavior:'smooth'})" class="px-6 py-3 rounded-full btn-gradient text-white font-semibold shadow-lg">Get Started Now</button>
+                <button onclick="document.getElementById('cvForm').scrollIntoView({behavior:'smooth'})" class="px-6 py-3 rounded-full border border-white/10 backdrop-blur-sm text-white/90">See layouts</button>
+            </div>
+            <div class="mt-8 flex items-center justify-center gap-6 text-sm text-white/60">
+                <div><span class="counter" data-target="1250">1250</span> CVs created</div>
+                <div><span class="counter" data-target="6">6</span> layouts</div>
+                <div>⭐ <span class="counter" data-target="98">98</span>% satisfaction</div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Form & Layouts -->
+    <main id="layouts" class="py-8">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <section id="cvForm" class="py-4 pb-12">
+                {% if error %}
+                <div class="mb-6 p-4 bg-red-500/20 border border-red-500/30 rounded-xl text-red-300">{{ error }}</div>
+                {% endif %}
+
+                <div class="grid lg:grid-cols-1 gap-8">
+                    <!-- Form -->
+                    <div>
+                        <!-- Layout Cards -->
+                        <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6" aria-label="Layout gallery">
+                            {% for layout in layouts %}
+                            <div class="layout-card glass-card rounded-2xl p-4 text-center card-lift {% if loop.first %}active{% endif %}" 
+                                 data-layout="{{ layout.id }}" 
+                                 onclick="selectLayout('{{ layout.id }}', this)">
+                                <div class="w-12 h-12 mx-auto rounded-xl bg-gradient-to-r {{ layout.color }} flex items-center justify-center text-white text-2xl mb-2">
+                                    <i class="{{ layout.icon }}"></i>
+                                </div>
+                                <h4 class="font-bold text-white text-sm">{{ layout.name }}</h4>
+                                <p class="text-white/40 text-xs mt-1">{{ layout.desc }}</p>
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="glass-card-dark rounded-2xl p-6">
+                            <form id="cvFormSubmit" action="/generate" method="POST">
+                                <input type="hidden" name="layout" id="selectedLayout" value="classic">
+                                
+                                <div class="mb-4">
+                                    <label class="block text-gray-700 font-semibold text-sm mb-2">
+                                        <i class="fas fa-paste text-purple-600 mr-2"></i> Paste Your CV Text
+                                    </label>
+                                    <textarea name="cv_text" id="cvText" rows="14"
+                                        class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-500 focus:ring-4 focus:ring-purple-200 transition-all duration-200 resize-none" 
+                                        placeholder="Paste your CV here..."></textarea>
+                                </div>
+
+                                <div class="flex gap-3">
+                                    <button type="submit" id="generateBtn"
+                                        class="flex-1 btn-gradient text-white font-bold py-3 px-6 rounded-xl transition-all duration-200 flex items-center justify-center gap-3 text-base shadow-lg">
+                                        <i class="fas fa-magic"></i> Generate CV
+                                    </button>
+                                    <button type="button" onclick="loadSample()" class="px-4 py-3 rounded-xl border border-gray-200 text-gray-700 bg-white/90">Load Sample</button>
+                                </div>
+
+                                <div id="loadingDiv" class="hidden text-center py-4">
+                                    <div class="spinner mx-auto"></div>
+                                    <p class="mt-3 text-gray-600 font-semibold">Generating your CV...</p>
+                                </div>
+                            </form>
+
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-center mt-8 text-white/30 text-sm">
+                    Built by <span class="text-white/60 font-semibold">Calvin Mosoba</span> — 6 Professional Layouts
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <footer class="mt-12 py-8 text-white/60">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div>
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-lg">CP</div>
+                    <div>
+                        <div class="font-bold">CV Pro</div>
+                        <div class="text-xs">Premium CV Builder • Built by Calvin</div>
+                    </div>
+                </div>
+            </div>
+            <div class="text-sm">© {{ current_year }} Calvin Mosoba. All rights reserved.</div>
+        </div>
+    </footer>
+
+    <script>
+        function selectLayout(layoutId, el) {
+            document.querySelectorAll('.layout-card').forEach(c => c.classList.remove('active'));
+            if (el) el.classList.add('active');
+            document.getElementById('selectedLayout').value = layoutId;
+        }
+
+        function loadSample() {
+            document.getElementById('cvText').value = `JOHN AMWAYI NGATIA\n\nI am a highly motivated and results-driven Compliance Account Manager with over 5 years of experience in tax administration, revenue management, and financial compliance. Currently pursuing a Master's degree at Moi University.\n\nEDUCATION\n2024 – To Date: Master's Degree (Ongoing), Moi University.\n2016 – 2021: Kenyatta University – Bachelor's Degree in Economics and Finance.\n\nEMPLOYMENT\n2023 – To Date: Compliance Account Manager – Kenya Revenue Authority (KRA), Medium Taxpayers Office (MTO).\n2020 – 2022: Balkan Ltd (Maseno, Kenya) – Research Associate and Data Analyst.\n\nSKILLS\nTax Laws, Tax Administration, Customer Service, Data Analytics, Auditing, Relationship Building.\n\nREFERENCES\nSurbhi S. Vashisht (Mrs.)\nHead Teacher – Early Years and Preparatory\nEmail: surbhi.vashisht@hillcrest.ac.ke\nPhone: +254 733 941 398`;
+        }
+
+        // Form Submit
+        document.getElementById('cvFormSubmit').addEventListener('submit', function(e) {
+            const text = document.getElementById('cvText').value.trim();
+            if (!text) {
+                e.preventDefault();
+                alert('Please paste your CV text first.');
+                return;
+            }
+            document.getElementById('loadingDiv').style.display = 'block';
+            document.getElementById('generateBtn').disabled = true;
+            document.getElementById('generateBtn').innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Processing...';
+        });
+    </script>
+</body>
+</html>

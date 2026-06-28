@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Bag - Allison Beauty</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-50">
+
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+            <a href="{{ url_for('index') }}" class="text-2xl font-bold">
+                allison<span class="text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-purple-400">beauty</span>
+            </a>
+            <a href="{{ url_for('index') }}" class="text-gray-600 hover:text-pink-600 transition">
+                <i class="fas fa-arrow-left"></i> Continue Shopping
+            </a>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold mb-2">Your Bag</h1>
+        <p class="text-gray-500 mb-8">{{ total_items }} item{% if total_items != 1 %}s{% endif %} in your bag</p>
+
+        {% if cart_items %}
+        <div class="grid lg:grid-cols-3 gap-8">
+            <div class="lg:col-span-2 space-y-4">
+                {% for item in cart_items %}
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 md:p-6" id="item-{{ item.id }}">
+                    <div class="flex gap-4">
+                        <div class="w-24 h-24 rounded-xl overflow-hidden flex-shrink-0 bg-gray-100">
+                            <img src="{{ item.image }}" alt="{{ item.name }}" class="w-full h-full object-cover">
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex justify-between">
+                                <div>
+                                    <h3 class="font-semibold text-gray-900">{{ item.name }}</h3>
+                                    {% if item.type == 'bundle' %}
+                                    <span class="text-xs text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full">Bundle</span>
+                                    {% endif %}
+                                    <p class="text-sm text-gray-500 mt-1">${{ "%.2f"|format(item.price) }}</p>
+                                </div>
+                                <button onclick="removeItem('{{ item.id }}')" class="text-gray-400 hover:text-red-500 transition">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </div>
+                            <div class="flex items-center gap-3 mt-3">
+                                <button onclick="updateQuantity('{{ item.id }}', 'decrease')" class="w-8 h-8 rounded-full bg-gray-100 hover:bg-pink-100 hover:text-pink-600 flex items-center justify-center transition">
+                                    <i class="fas fa-minus text-xs"></i>
+                                </button>
+                                <span class="font-medium w-8 text-center" id="qty-{{ item.id }}">{{ item.quantity }}</span>
+                                <button onclick="updateQuantity('{{ item.id }}', 'increase')" class="w-8 h-8 rounded-full bg-gray-100 hover:bg-pink-100 hover:text-pink-600 flex items-center justify-center transition">
+                                    <i class="fas fa-plus text-xs"></i>
+                                </button>
+                                <span class="text-sm font-semibold text-gray-900 ml-4" id="item-total-{{ item.id }}">
+                                    ${{ "%.2f"|format(item.item_total) }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sticky top-24">
+                    <h2 class="text-lg font-bold mb-4">Order Summary</h2>
+                    <div class="space-y-3 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Subtotal</span>
+                            <span class="font-medium" id="subtotal">${{ "%.2f"|format(subtotal) }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Shipping</span>
+                            <span id="shipping">
+                                {% if shipping == 0 %}
+                                <span class="text-green-600 font-medium">FREE</span>
+                                {% else %}
+                                <span class="font-medium">${{ "%.2f"|format(shipping) }}</span>
+                                {% endif %}
+                            </span>
+                        </div>
+                        <div class="border-t pt-3 mt-3">
+                            <div class="flex justify-between text-lg font-bold">
+                                <span>Total</span>
+                                <span id="total">${{ "%.2f"|format(total) }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <a href="{{ url_for('checkout') }}" class="w-full py-4 rounded-2xl bg-gradient-to-r from-pink-500 to-purple-600 text-white font-semibold text-center block mt-6 hover:shadow-lg transition">
+                        Proceed to Checkout
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="text-center py-16">
+            <div class="text-6xl text-gray-300 mb-4">
+                <i class="fas fa-shopping-bag"></i>
+            </div>
+            <h2 class="text-2xl font-bold mb-2">Your bag is empty</h2>
+            <p class="text-gray-500 mb-6">Looks like you haven't added anything yet.</p>
+            <a href="{{ url_for('index') }}" class="inline-block px-8 py-3 rounded-2xl bg-gradient-to-r from-pink-500 to-purple-600 text-white font-semibold hover:shadow-lg transition">
+                <i class="fas fa-shopping-bag mr-2"></i> Start Shopping
+            </a>
+        </div>
+        {% endif %}
+    </main>
+
+    <script>
+    function updateQuantity(itemId, action) {
+        fetch(`/update-cart/${itemId}/${action}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const qtyElement = document.getElementById(`qty-${itemId}`);
+                if (data.quantity === 0) {
+                    location.reload();
+                } else {
+                    qtyElement.textContent = data.quantity;
+                    const itemTotal = document.getElementById(`item-total-${itemId}`);
+                    if (itemTotal) {
+                        itemTotal.textContent = `$${data.item_total.toFixed(2)}`;
+                    }
+                    document.getElementById('subtotal').textContent = `$${data.subtotal.toFixed(2)}`;
+                    const shippingEl = document.getElementById('shipping');
+                    if (data.shipping === 0) {
+                        shippingEl.innerHTML = '<span class="text-green-600 font-medium">FREE</span>';
+                    } else {
+                        shippingEl.innerHTML = `<span class="font-medium">$${data.shipping.toFixed(2)}</span>`;
+                    }
+                    document.getElementById('total').textContent = `$${data.total.toFixed(2)}`;
+                }
+            } else {
+                alert(data.message || 'Error updating cart');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Something went wrong. Please try again.');
+        });
+    }
+
+    function removeItem(itemId) {
+        if (!confirm('Remove this item from your bag?')) return;
+        fetch(`/remove-from-cart/${itemId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert(data.message || 'Error removing item');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Something went wrong. Please try again.');
+        });
+    }
+    </script>
+
+</body>
+</html>
