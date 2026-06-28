@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template_string, send_file
+from flask import Flask, request, jsonify, render_template, send_file
 from datetime import datetime
 import os
 import uuid
@@ -9,12 +9,19 @@ app = Flask(__name__)
 app.secret_key = 'dev-secret-key-12345'
 
 # ===== CONFIGURATION =====
-UPLOAD_FOLDER = '/tmp/uploads'
-ENHANCED_FOLDER = '/tmp/enhanced'
+# Use /tmp for Vercel, local folder for development
+if os.environ.get('VERCEL'):
+    UPLOAD_FOLDER = '/tmp/uploads'
+    ENHANCED_FOLDER = '/tmp/enhanced'
+    ORDERS_FILE = '/tmp/orders.json'
+else:
+    UPLOAD_FOLDER = 'uploads'
+    ENHANCED_FOLDER = 'enhanced'
+    ORDERS_FILE = 'orders.json'
+
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(ENHANCED_FOLDER, exist_ok=True)
 
-ORDERS_FILE = '/tmp/orders.json'
 ALLOWED_EXTENSIONS = {'jpg', 'jpeg', 'png', 'webp'}
 
 # ===== HELPER FUNCTIONS =====
@@ -41,597 +48,22 @@ def allowed_file(filename):
 def generate_order_id():
     return 'ORD-' + str(uuid.uuid4().hex[:8]).upper()
 
-# ===== HTML TEMPLATES (Embedded) =====
-
-INDEX_HTML = '''<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ApexBuilt · AI Photo Enhancement</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
-    <style>
-        * { font-family: 'Inter', sans-serif; }
-        .gradient-hero { background: linear-gradient(135deg, #0b2b44 0%, #1a5276 50%, #0b2b44 100%); position: relative; overflow: hidden; }
-        .glass-card { background: rgba(255,255,255,0.05); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.08); }
-        .btn-primary { background: linear-gradient(135deg, #1a5276, #2e86c1); transition: all 0.3s ease; border: none; cursor: pointer; color: white; }
-        .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 20px 50px rgba(26, 82, 118, 0.4); }
-        .pricing-card { background: white; border-radius: 24px; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); border: 1px solid rgba(0,0,0,0.04); }
-        .pricing-card:hover { transform: translateY(-8px); box-shadow: 0 30px 70px rgba(26, 82, 118, 0.1); }
-        .drop-zone { border: 2px dashed #1a5276; border-radius: 20px; transition: all 0.3s ease; background: rgba(26, 82, 118, 0.03); cursor: pointer; }
-        .drop-zone.drag-over { border-color: #2e86c1; background: rgba(26, 82, 118, 0.08); transform: scale(1.01); }
-        .contact-input { border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 18px; transition: all 0.3s ease; width: 100%; }
-        .contact-input:focus { outline: none; border-color: #1a5276; box-shadow: 0 0 0 4px rgba(26, 82, 118, 0.1); }
-        .nav-link { position: relative; color: rgba(255,255,255,0.7); transition: color 0.3s; text-decoration: none; }
-        .nav-link::after { content: ''; position: absolute; bottom: -6px; left: 50%; width: 0; height: 2.5px; background: #2e86c1; transition: all 0.3s ease; transform: translateX(-50%); border-radius: 2px; }
-        .nav-link:hover { color: white; }
-        .nav-link:hover::after { width: 80%; }
-        .section-title { font-weight: 800; letter-spacing: -0.02em; }
-        .fade-slide { opacity: 0; transform: translateY(20px); animation: fadeSlide 0.6s ease-out forwards; }
-        @keyframes fadeSlide { 0% { opacity: 0; transform: translateY(20px); } 100% { opacity: 1; transform: translateY(0); } }
-        .thumbnail-preview { width: 100px; height: 100px; object-fit: cover; border-radius: 12px; border: 2px solid #e2e8f0; }
-        .success-message { background: #d1fae5; border-left: 4px solid #065f46; border-radius: 12px; padding: 16px 20px; }
-        .btn-outline { border: 2px solid #2e86c1; color: #2e86c1; background: transparent; transition: all 0.3s ease; cursor: pointer; padding: 16px 32px; border-radius: 9999px; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; }
-        .btn-outline:hover { background: #2e86c1; color: white; transform: translateY(-2px); }
-        .footer-link { color: rgba(255,255,255,0.4); transition: all 0.3s ease; text-decoration: none; }
-        .footer-link:hover { color: #2e86c1; }
-    </style>
-</head>
-<body>
-    <div style="background:#0b2b44; color:rgba(255,255,255,0.6); font-size:0.75rem; padding:6px 0; text-align:center; border-bottom:1px solid rgba(255,255,255,0.05);">
-        <div style="max-width:1280px; margin:0 auto; padding:0 16px; display:flex; flex-wrap:wrap; justify-content:center; align-items:center; gap:24px;">
-            <span><i class="fas fa-phone" style="color:#2e86c1; margin-right:4px;"></i> +254 700 123 456</span>
-            <span><i class="fas fa-envelope" style="color:#2e86c1; margin-right:4px;"></i> hello@apexbuilt.com</span>
-            <span><i class="fas fa-clock" style="color:#2e86c1; margin-right:4px;"></i> 24/7 Support</span>
-        </div>
-    </div>
-
-    <nav style="position:fixed; top:24px; left:0; right:0; z-index:50; padding:0 16px;">
-        <div style="max-width:1280px; margin:0 auto; background:rgba(255,255,255,0.05); backdrop-filter:blur(16px); border-radius:16px; box-shadow:0 25px 50px -12px rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.05);">
-            <div style="display:flex; align-items:center; justify-content:space-between; height:64px; padding:0 24px;">
-                <a href="/" style="display:flex; align-items:center; gap:12px; text-decoration:none;">
-                    <div style="width:40px; height:40px; border-radius:12px; background:linear-gradient(135deg, #1a5276, #2e86c1); display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; font-size:18px; box-shadow:0 10px 15px -3px rgba(0,0,0,0.1);">
-                        <i class="fas fa-crown"></i>
-                    </div>
-                    <span style="font-size:20px; font-weight:bold; color:white;">Apex<span style="color:#2e86c1;">Built</span></span>
-                </a>
-                <div style="display:flex; align-items:center; gap:24px; font-size:0.875rem;">
-                    <a href="#home" class="nav-link">Home</a>
-                    <a href="#pricing" class="nav-link">Pricing</a>
-                    <a href="#upload" class="nav-link">Upload</a>
-                    <a href="/admin" class="nav-link" style="color:#2e86c1;">Dashboard</a>
-                </div>
-                <div style="display:flex; align-items:center; gap:12px;">
-                    <button onclick="document.getElementById('upload').scrollIntoView({behavior:'smooth'})" class="btn-primary" style="padding:8px 20px; border-radius:9999px; font-weight:600; font-size:0.875rem; box-shadow:0 10px 15px -3px rgba(0,0,0,0.1);">
-                        <i class="fas fa-upload" style="margin-right:6px;"></i> Upload
-                    </button>
-                </div>
-            </div>
-        </div>
-    </nav>
-
-    <section id="home" class="gradient-hero" style="min-height:70vh; display:flex; align-items:center; padding-top:80px; position:relative;">
-        <div style="max-width:1280px; margin:0 auto; padding:48px 16px; position:relative; z-index:10;">
-            <div style="text-align:center; max-width:896px; margin:0 auto;" class="fade-slide">
-                <div style="display:inline-flex; align-items:center; gap:8px; background:rgba(46,134,193,0.1); backdrop-filter:blur(4px); padding:8px 16px; border-radius:9999px; font-size:0.875rem; color:#2e86c1; font-weight:600; margin-bottom:24px; border:1px solid rgba(46,134,193,0.2);">
-                    <span style="width:10px; height:10px; background:#2e86c1; border-radius:50%; display:inline-block; animation:pulse 2s infinite;"></span>
-                    AI-Powered Enhancement
-                </div>
-                <h1 style="font-size:2.25rem; font-weight:800; color:white; line-height:1.05;">
-                    <span style="color:#2e86c1;">AI</span> Photo Enhancement
-                </h1>
-                <p style="color:rgba(209,213,219,1); font-size:1.125rem; margin-top:16px; max-width:672px; margin-left:auto; margin-right:auto; line-height:1.625;">
-                    Upload your photo and we'll professionally enhance it using advanced AI technology.
-                </p>
-                <div style="display:flex; flex-wrap:wrap; justify-content:center; gap:16px; margin-top:32px;">
-                    <button onclick="document.getElementById('upload').scrollIntoView({behavior:'smooth'})" class="btn-primary" style="padding:16px 32px; border-radius:9999px; font-weight:700; box-shadow:0 20px 25px -5px rgba(0,0,0,0.1); display:flex; align-items:center; gap:8px; font-size:1rem;">
-                        <i class="fas fa-cloud-upload-alt"></i> Upload Now
-                    </button>
-                    <a href="#pricing" class="btn-outline">
-                        <i class="fas fa-tag"></i> Pricing
-                    </a>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section id="pricing" style="padding:80px 16px; background:#f0f7ff;">
-        <div style="max-width:1280px; margin:0 auto;">
-            <div style="text-align:center; margin-bottom:56px;">
-                <span style="color:#1a5276; font-size:0.75rem; font-weight:600; letter-spacing:0.2em; text-transform:uppercase;">Pricing</span>
-                <h2 class="section-title" style="font-size:2.25rem; color:#0b2b44; margin-top:8px;">Simple, Transparent Pricing</h2>
-                <p style="color:#6b7280; margin-top:12px; max-width:448px; margin-left:auto; margin-right:auto;">Professional AI photo enhancement at an affordable rate</p>
-            </div>
-            <div style="max-width:448px; margin:0 auto;">
-                <div class="pricing-card" style="padding:32px; box-shadow:0 10px 15px -3px rgba(0,0,0,0.1);">
-                    <div style="text-align:center;">
-                        <div style="width:80px; height:80px; border-radius:16px; background:linear-gradient(135deg, #1a5276, #2e86c1); display:flex; align-items:center; justify-content:center; color:white; font-size:2rem; margin:0 auto 16px; box-shadow:0 10px 15px -3px rgba(0,0,0,0.1);">
-                            <i class="fas fa-image"></i>
-                        </div>
-                        <h3 style="font-size:1.5rem; font-weight:700; color:#0b2b44;">Photo Enhancement</h3>
-                        <div style="font-size:3rem; font-weight:800; color:#1a5276; margin-top:16px;">KSh 100</div>
-                        <p style="color:#6b7280; font-size:0.875rem; margin-top:4px;">per photo</p>
-                        <div style="display:flex; align-items:center; justify-content:center; gap:8px; margin-top:16px; color:#1a5276;">
-                            <i class="fas fa-clock"></i>
-                            <span style="font-weight:600;">Delivery within 30 minutes</span>
-                        </div>
-                        <div style="margin-top:24px; text-align:left;">
-                            <p style="margin:8px 0; font-size:0.875rem; color:#4b5563;"><i class="fas fa-check-circle" style="color:#2e86c1; margin-right:8px;"></i> AI-powered enhancement</p>
-                            <p style="margin:8px 0; font-size:0.875rem; color:#4b5563;"><i class="fas fa-check-circle" style="color:#2e86c1; margin-right:8px;"></i> Color correction & sharpening</p>
-                            <p style="margin:8px 0; font-size:0.875rem; color:#4b5563;"><i class="fas fa-check-circle" style="color:#2e86c1; margin-right:8px;"></i> Manual quality check</p>
-                            <p style="margin:8px 0; font-size:0.875rem; color:#4b5563;"><i class="fas fa-check-circle" style="color:#2e86c1; margin-right:8px;"></i> Delivered to your email</p>
-                        </div>
-                        <button onclick="document.getElementById('upload').scrollIntoView({behavior:'smooth'})" class="btn-primary" style="margin-top:32px; width:100%; padding:16px; border-radius:9999px; font-weight:700; font-size:1.125rem; box-shadow:0 10px 15px -3px rgba(0,0,0,0.1);">
-                            <i class="fas fa-upload" style="margin-right:8px;"></i> Start Now
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section id="upload" style="padding:80px 16px; background:white;">
-        <div style="max-width:896px; margin:0 auto;">
-            <div style="text-align:center; margin-bottom:56px;">
-                <span style="color:#1a5276; font-size:0.75rem; font-weight:600; letter-spacing:0.2em; text-transform:uppercase;">Upload</span>
-                <h2 class="section-title" style="font-size:2.25rem; color:#0b2b44; margin-top:8px;">Upload Your Photo</h2>
-                <p style="color:#6b7280; margin-top:12px;">Drag & drop or click to select your image</p>
-            </div>
-
-            <div style="background:white; border-radius:24px; padding:32px; box-shadow:0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); border:1px solid #f3f4f6;">
-                <div id="successMessage" style="display:none; background:#d1fae5; border-left:4px solid #065f46; border-radius:12px; padding:16px 20px; margin-bottom:24px;">
-                    <div style="display:flex; align-items:flex-start; gap:12px;">
-                        <i class="fas fa-check-circle" style="color:#065f46; font-size:1.25rem; margin-top:2px;"></i>
-                        <div>
-                            <p style="font-weight:600; color:#065f46;">Your photo has been received!</p>
-                            <p style="font-size:0.875rem; color:#065f46;">Please complete payment. Once payment is confirmed, your photo will be manually enhanced and sent to your email.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <form id="uploadForm" enctype="multipart/form-data">
-                    <div id="dropZone" class="drop-zone" style="padding:48px; text-align:center;">
-                        <div style="display:flex; flex-direction:column; align-items:center; gap:16px;">
-                            <div style="width:80px; height:80px; border-radius:50%; background:rgba(26,82,118,0.1); display:flex; align-items:center; justify-content:center; color:#1a5276; font-size:2rem;">
-                                <i class="fas fa-cloud-upload-alt"></i>
-                            </div>
-                            <div>
-                                <p style="font-size:1.125rem; font-weight:600; color:#0b2b44;">Drag & drop your image here</p>
-                                <p style="font-size:0.875rem; color:#9ca3af;">or click to browse</p>
-                                <p style="font-size:0.75rem; color:#9ca3af; margin-top:8px;">Supports JPG, JPEG, PNG, WEBP (max 20MB)</p>
-                            </div>
-                            <input type="file" id="fileInput" name="photo" accept=".jpg,.jpeg,.png,.webp" style="display:none;" required />
-                        </div>
-                    </div>
-
-                    <div id="thumbnailContainer" style="display:none; margin-top:16px; align-items:center; gap:16px; padding:16px; background:#f9fafb; border-radius:12px;">
-                        <img id="thumbnailPreview" class="thumbnail-preview" src="#" alt="Preview" />
-                        <div>
-                            <p id="fileName" style="font-weight:600; color:#0b2b44;"></p>
-                            <p id="fileSize" style="font-size:0.875rem; color:#9ca3af;"></p>
-                        </div>
-                        <button type="button" id="removeFile" style="margin-left:auto; color:#ef4444; background:none; border:none; cursor:pointer; font-size:1.25rem;">
-                            <i class="fas fa-times-circle"></i>
-                        </button>
-                    </div>
-
-                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:24px;">
-                        <div>
-                            <label style="font-size:0.875rem; font-weight:600; color:#0b2b44; display:block; margin-bottom:4px;">Full Name *</label>
-                            <input type="text" name="name" placeholder="John Doe" class="contact-input" required />
-                        </div>
-                        <div>
-                            <label style="font-size:0.875rem; font-weight:600; color:#0b2b44; display:block; margin-bottom:4px;">Email Address *</label>
-                            <input type="email" name="email" placeholder="john@example.com" class="contact-input" required />
-                        </div>
-                    </div>
-                    <div style="margin-top:16px;">
-                        <label style="font-size:0.875rem; font-weight:600; color:#0b2b44; display:block; margin-bottom:4px;">Phone Number</label>
-                        <input type="tel" name="phone" placeholder="+254 700 123 456" class="contact-input" />
-                    </div>
-
-                    <button type="submit" class="btn-primary" style="width:100%; padding:16px; border-radius:12px; font-weight:700; font-size:1.125rem; box-shadow:0 10px 15px -3px rgba(0,0,0,0.1); margin-top:24px;">
-                        <i class="fas fa-upload" style="margin-right:8px;"></i> Upload Photo
-                    </button>
-                </form>
-            </div>
-        </div>
-    </section>
-
-    <footer style="background:#0b2b44; color:rgba(255,255,255,0.5); padding:48px 16px 24px; border-top:1px solid rgba(255,255,255,0.05);">
-        <div style="max-width:1280px; margin:0 auto;">
-            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:32px;">
-                <div>
-                    <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
-                        <div style="width:40px; height:40px; border-radius:12px; background:linear-gradient(135deg, #1a5276, #2e86c1); display:flex; align-items:center; justify-content:center; color:white; font-size:1.125rem;"><i class="fas fa-crown"></i></div>
-                        <span style="font-size:1.25rem; font-weight:700; color:white;">Apex<span style="color:#2e86c1;">Built</span></span>
-                    </div>
-                    <p style="font-size:0.875rem; line-height:1.625; color:#9ca3af; max-width:320px;">Professional AI photo enhancement and construction services.</p>
-                </div>
-                <div>
-                    <h4 style="color:white; font-weight:600; font-size:1rem; margin-bottom:12px;">Quick Links</h4>
-                    <ul style="list-style:none; padding:0; margin:0;">
-                        <li style="margin:6px 0;"><a href="#home" class="footer-link">Home</a></li>
-                        <li style="margin:6px 0;"><a href="#pricing" class="footer-link">Pricing</a></li>
-                        <li style="margin:6px 0;"><a href="#upload" class="footer-link">Upload</a></li>
-                        <li style="margin:6px 0;"><a href="/admin" class="footer-link">Dashboard</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h4 style="color:white; font-weight:600; font-size:1rem; margin-bottom:12px;">Contact</h4>
-                    <ul style="list-style:none; padding:0; margin:0; font-size:0.875rem;">
-                        <li style="display:flex; align-items:flex-start; gap:12px; margin:8px 0;"><i class="fas fa-phone" style="color:#2e86c1; margin-top:4px;"></i><span>+254 700 123 456</span></li>
-                        <li style="display:flex; align-items:flex-start; gap:12px; margin:8px 0;"><i class="fas fa-envelope" style="color:#2e86c1; margin-top:4px;"></i><span>hello@apexbuilt.com</span></li>
-                        <li style="display:flex; align-items:flex-start; gap:12px; margin:8px 0;"><i class="fas fa-map-pin" style="color:#2e86c1; margin-top:4px;"></i><span>Nairobi, Kenya</span></li>
-                    </ul>
-                </div>
-            </div>
-            <div style="border-top:1px solid rgba(255,255,255,0.05); margin-top:32px; padding-top:24px; text-align:center; font-size:0.75rem; color:#6b7280;">
-                © 2026 ApexBuilt. All rights reserved.
-            </div>
-        </div>
-    </footer>
-
-    <script>
-        const dropZone = document.getElementById('dropZone');
-        const fileInput = document.getElementById('fileInput');
-        const thumbnailContainer = document.getElementById('thumbnailContainer');
-        const thumbnailPreview = document.getElementById('thumbnailPreview');
-        const fileName = document.getElementById('fileName');
-        const fileSize = document.getElementById('fileSize');
-        const removeFileBtn = document.getElementById('removeFile');
-        let selectedFile = null;
-
-        dropZone.addEventListener('click', () => fileInput.click());
-        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); });
-        dropZone.addEventListener('dragleave', () => { dropZone.classList.remove('drag-over'); });
-        dropZone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            dropZone.classList.remove('drag-over');
-            if (e.dataTransfer.files.length > 0) handleFile(e.dataTransfer.files[0]);
-        });
-        fileInput.addEventListener('change', (e) => { if (e.target.files.length > 0) handleFile(e.target.files[0]); });
-
-        function handleFile(file) {
-            const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
-            if (!validTypes.includes(file.type)) { alert('Please upload a JPG, JPEG, PNG, or WEBP image.'); return; }
-            if (file.size > 20 * 1024 * 1024) { alert('File size must be less than 20MB.'); return; }
-            selectedFile = file;
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                thumbnailPreview.src = e.target.result;
-                fileName.textContent = file.name;
-                fileSize.textContent = (file.size / 1024 / 1024).toFixed(2) + ' MB';
-                thumbnailContainer.style.display = 'flex';
-                dropZone.style.display = 'none';
-            };
-            reader.readAsDataURL(file);
-        }
-
-        removeFileBtn.addEventListener('click', () => {
-            selectedFile = null;
-            thumbnailContainer.style.display = 'none';
-            dropZone.style.display = 'block';
-            fileInput.value = '';
-        });
-
-        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            if (!selectedFile) { alert('Please select a photo to upload.'); return; }
-            const formData = new FormData();
-            formData.append('photo', selectedFile);
-            formData.append('name', document.querySelector('input[name="name"]').value);
-            formData.append('email', document.querySelector('input[name="email"]').value);
-            formData.append('phone', document.querySelector('input[name="phone"]').value);
-
-            const submitBtn = e.target.querySelector('button[type="submit"]');
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Uploading...';
-
-            try {
-                const response = await fetch('/api/upload', { method: 'POST', body: formData });
-                const data = await response.json();
-                if (data.success) {
-                    document.getElementById('successMessage').style.display = 'block';
-                    document.getElementById('successMessage').scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    selectedFile = null;
-                    thumbnailContainer.style.display = 'none';
-                    dropZone.style.display = 'block';
-                    fileInput.value = '';
-                    document.querySelector('input[name="name"]').value = '';
-                    document.querySelector('input[name="email"]').value = '';
-                    document.querySelector('input[name="phone"]').value = '';
-                } else {
-                    alert('Error: ' + data.error);
-                }
-            } catch (error) {
-                alert('Upload failed: ' + error.message);
-            }
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = '<i class="fas fa-upload mr-2"></i> Upload Photo';
-        });
-
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function(e) {
-                e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            });
-        });
-
-        window.addEventListener('scroll', () => {
-            const nav = document.querySelector('nav > div');
-            if (window.scrollY > 40) {
-                nav.style.background = 'rgba(11, 43, 68, 0.92)';
-                nav.style.borderColor = 'rgba(46, 134, 193, 0.2)';
-            } else {
-                nav.style.background = 'rgba(255,255,255,0.05)';
-                nav.style.borderColor = 'rgba(255,255,255,0.05)';
-            }
-        });
-    </script>
-</body>
-</html>'''
-
-ADMIN_HTML = '''<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Admin Dashboard · ApexBuilt</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
-    <style>
-        * { font-family: 'Inter', sans-serif; }
-        .admin-card { background: white; border-radius: 16px; transition: all 0.3s ease; border: 1px solid #e2e8f0; padding: 24px; text-align: center; }
-        .admin-card:hover { box-shadow: 0 8px 25px rgba(0,0,0,0.06); }
-        .status-badge { padding: 4px 14px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; display: inline-block; }
-        .status-pending { background: #fef3c7; color: #92400e; }
-        .status-processing { background: #dbeafe; color: #1e40af; }
-        .status-completed { background: #d1fae5; color: #065f46; }
-        .admin-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
-        .admin-table th { background: #f8fafc; font-weight: 600; color: #1e293b; padding: 12px 16px; text-align: left; border-bottom: 2px solid #e2e8f0; }
-        .admin-table td { padding: 12px 16px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
-        .admin-table tr:hover { background: #f8fafc; }
-        .btn-action { padding: 4px 12px; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; border: none; cursor: pointer; transition: all 0.2s ease; }
-        .btn-action:hover { transform: translateY(-1px); }
-        .btn-process { background: #dbeafe; color: #1e40af; }
-        .btn-process:hover { background: #bfdbfe; }
-        .btn-complete { background: #d1fae5; color: #065f46; }
-        .btn-complete:hover { background: #a7f3d0; }
-        .btn-paid { background: #ede9fe; color: #5b21b6; }
-        .btn-paid:hover { background: #ddd6fe; }
-        .btn-view { background: #f3f4f6; color: #374151; }
-        .btn-view:hover { background: #e5e7eb; }
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 50; padding: 16px; }
-        .modal-content { background: white; border-radius: 16px; padding: 32px; max-width: 448px; width: 100%; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); }
-        .drop-zone-enhanced { border: 2px dashed #1a5276; border-radius: 12px; padding: 32px; text-align: center; cursor: pointer; transition: all 0.3s ease; }
-        .drop-zone-enhanced:hover { background: rgba(26, 82, 118, 0.05); }
-        .stat-number { font-size: 2rem; font-weight: 700; }
-        @media (max-width: 768px) {
-            .admin-table { font-size: 0.75rem; }
-            .admin-table th, .admin-table td { padding: 8px 10px; }
-            .status-badge { font-size: 0.65rem; padding: 2px 10px; }
-            .stat-number { font-size: 1.5rem; }
-        }
-    </style>
-</head>
-<body>
-    <nav style="background:#0b2b44; color:white; padding:16px; box-shadow:0 10px 15px -3px rgba(0,0,0,0.1);">
-        <div style="max-width:1280px; margin:0 auto; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:16px;">
-            <div style="display:flex; align-items:center; gap:16px;">
-                <a href="/" style="display:flex; align-items:center; gap:8px; text-decoration:none; color:white;">
-                    <div style="width:32px; height:32px; border-radius:8px; background:linear-gradient(135deg, #1a5276, #2e86c1); display:flex; align-items:center; justify-content:center; color:white; font-size:0.875rem;">
-                        <i class="fas fa-crown"></i>
-                    </div>
-                    <span style="font-size:1.125rem; font-weight:700;">Apex<span style="color:#2e86c1;">Built</span></span>
-                </a>
-                <span style="font-size:0.875rem; color:#9ca3af;">| Admin Dashboard</span>
-            </div>
-            <div style="display:flex; align-items:center; gap:16px;">
-                <a href="/" style="font-size:0.875rem; color:#9ca3af; text-decoration:none; transition:color 0.3s;">
-                    <i class="fas fa-arrow-left" style="margin-right:4px;"></i> Back to Site
-                </a>
-                <button onclick="location.reload()" style="padding:8px 16px; border-radius:8px; background:#1a5276; color:white; font-size:0.875rem; border:none; cursor:pointer; transition:background 0.3s;">
-                    <i class="fas fa-sync-alt" style="margin-right:4px;"></i> Refresh
-                </button>
-            </div>
-        </div>
-    </nav>
-
-    <div style="background:#f8fafc; min-height:100vh; padding:32px 16px;">
-        <div style="max-width:1280px; margin:0 auto;">
-            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:16px; margin-bottom:32px;">
-                <div class="admin-card">
-                    <div class="stat-number" style="color:#1a5276;" id="totalOrders">{{ orders|length }}</div>
-                    <p style="font-size:0.875rem; color:#6b7280;">Total Orders</p>
-                </div>
-                <div class="admin-card">
-                    <div class="stat-number" style="color:#f59e0b;" id="pendingOrders">{{ orders|selectattr('status', 'equalto', 'pending')|list|length }}</div>
-                    <p style="font-size:0.875rem; color:#6b7280;">Pending</p>
-                </div>
-                <div class="admin-card">
-                    <div class="stat-number" style="color:#3b82f6;" id="processingOrders">{{ orders|selectattr('status', 'equalto', 'processing')|list|length }}</div>
-                    <p style="font-size:0.875rem; color:#6b7280;">Processing</p>
-                </div>
-                <div class="admin-card">
-                    <div class="stat-number" style="color:#10b981;" id="completedOrders">{{ orders|selectattr('status', 'equalto', 'completed')|list|length }}</div>
-                    <p style="font-size:0.875rem; color:#6b7280;">Completed</p>
-                </div>
-            </div>
-
-            <div style="background:white; border-radius:16px; padding:24px; box-shadow:0 1px 3px 0 rgba(0,0,0,0.1); border:1px solid #e2e8f0; overflow-x:auto;">
-                <h3 style="font-size:1.125rem; font-weight:700; color:#0b2b44; margin-bottom:16px; display:flex; align-items:center; gap:8px;">
-                    <i class="fas fa-list-ul" style="color:#1a5276;"></i> All Orders
-                </h3>
-                <table class="admin-table">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Order ID</th>
-                            <th>Customer</th>
-                            <th>Email</th>
-                            <th>Phone</th>
-                            <th>Photo</th>
-                            <th>Status</th>
-                            <th>Payment</th>
-                            <th>Enhanced</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="ordersBody">
-                        {% for order in orders %}
-                        <tr id="order-{{ order.id }}">
-                            <td style="font-weight:500; color:#0b2b44;">{{ loop.index }}</td>
-                            <td style="font-family:monospace; font-size:0.75rem;">{{ order.order_id }}</td>
-                            <td style="font-weight:500;">{{ order.customer_name }}</td>
-                            <td style="color:#4b5563;">{{ order.customer_email }}</td>
-                            <td style="color:#4b5563;">{{ order.customer_phone or '—' }}</td>
-                            <td><span style="font-size:0.75rem; background:#f3f4f6; padding:4px 8px; border-radius:4px;">{{ order.original_filename }}</span></td>
-                            <td><span class="status-badge status-{{ order.status }}">{{ order.status|capitalize }}</span></td>
-                            <td><span class="status-badge {% if order.payment_status == 'paid' %}status-completed{% else %}status-pending{% endif %}">{{ order.payment_status|capitalize }}</span></td>
-                            <td>{% if order.enhanced_filename %}<span style="font-size:0.75rem; color:#10b981;"><i class="fas fa-check-circle" style="margin-right:4px;"></i> Delivered</span>{% else %}<span style="font-size:0.75rem; color:#9ca3af;">—</span>{% endif %}</td>
-                            <td>
-                                <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                                    {% if order.status == 'pending' %}
-                                        <button onclick="updateStatus({{ order.id }}, 'processing')" class="btn-action btn-process">Process</button>
-                                        <button onclick="updatePayment({{ order.id }}, 'paid')" class="btn-action btn-paid">Mark Paid</button>
-                                    {% endif %}
-                                    {% if order.status == 'processing' %}
-                                        <button onclick="openEnhanceModal({{ order.id }})" class="btn-action btn-complete">Complete</button>
-                                    {% endif %}
-                                    {% if order.status == 'completed' and order.enhanced_filename %}
-                                        <a href="/enhanced/{{ order.enhanced_filename }}" target="_blank" class="btn-action btn-view" style="text-decoration:none;">View</a>
-                                    {% endif %}
-                                </div>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <div id="enhanceModal" class="modal-overlay">
-        <div class="modal-content">
-            <h3 style="font-size:1.25rem; font-weight:700; color:#0b2b44; margin-bottom:16px;">Upload Enhanced Photo</h3>
-            <form id="enhanceForm" enctype="multipart/form-data">
-                <input type="hidden" id="enhanceOrderId" name="order_id" />
-                <div class="drop-zone-enhanced" onclick="document.getElementById('enhanceFileInput').click()">
-                    <i class="fas fa-cloud-upload-alt" style="font-size:2rem; color:#1a5276; margin-bottom:8px;"></i>
-                    <p style="font-size:0.875rem; color:#4b5563;">Click to upload enhanced photo</p>
-                    <input type="file" id="enhanceFileInput" name="enhanced_photo" accept=".jpg,.jpeg,.png,.webp" style="display:none;" required />
-                </div>
-                <div id="enhancePreview" style="display:none; margin-top:16px;">
-                    <img id="enhancePreviewImg" style="width:100%; height:192px; object-fit:cover; border-radius:12px;" />
-                </div>
-                <div style="display:flex; gap:12px; margin-top:24px;">
-                    <button type="submit" style="flex:1; padding:12px 24px; border-radius:12px; background:linear-gradient(135deg, #1a5276, #2e86c1); color:white; font-weight:700; border:none; cursor:pointer; transition:all 0.3s;">
-                        <i class="fas fa-upload" style="margin-right:8px;"></i> Upload
-                    </button>
-                    <button type="button" onclick="closeModal()" style="padding:12px 24px; border-radius:12px; background:#e5e7eb; color:#374151; font-weight:700; border:none; cursor:pointer; transition:all 0.3s;">Cancel</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <script>
-        let currentOrderId = null;
-
-        function updateStatus(orderId, status) {
-            if (!confirm(`Change order ${orderId} to ${status}?`)) return;
-            fetch(`/api/orders/${orderId}/status`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status: status })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) { alert('✅ ' + data.message); location.reload(); }
-                else { alert('❌ Error: ' + data.error); }
-            })
-            .catch(err => alert('Error: ' + err.message));
-        }
-
-        function updatePayment(orderId, status) {
-            if (!confirm(`Mark order ${orderId} as ${status}?`)) return;
-            fetch(`/api/orders/${orderId}/payment`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ payment_status: status })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) { alert('✅ ' + data.message); location.reload(); }
-                else { alert('❌ Error: ' + data.error); }
-            })
-            .catch(err => alert('Error: ' + err.message));
-        }
-
-        function openEnhanceModal(orderId) {
-            currentOrderId = orderId;
-            document.getElementById('enhanceOrderId').value = orderId;
-            document.getElementById('enhanceModal').style.display = 'flex';
-        }
-
-        function closeModal() {
-            document.getElementById('enhanceModal').style.display = 'none';
-            document.getElementById('enhanceFileInput').value = '';
-            document.getElementById('enhancePreview').style.display = 'none';
-        }
-
-        document.getElementById('enhanceFileInput').addEventListener('change', function(e) {
-            if (this.files.length > 0) {
-                const reader = new FileReader();
-                reader.onload = (ev) => {
-                    document.getElementById('enhancePreviewImg').src = ev.target.result;
-                    document.getElementById('enhancePreview').style.display = 'block';
-                };
-                reader.readAsDataURL(this.files[0]);
-            }
-        });
-
-        document.getElementById('enhanceForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const formData = new FormData(this);
-            const orderId = document.getElementById('enhanceOrderId').value;
-            const submitBtn = this.querySelector('button[type="submit"]');
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Uploading...';
-            fetch(`/api/orders/${orderId}/enhance`, { method: 'POST', body: formData })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) { alert('✅ ' + data.message); closeModal(); location.reload(); }
-                else { alert('❌ Error: ' + data.error); }
-            })
-            .catch(err => alert('Error: ' + err.message))
-            .finally(() => { submitBtn.disabled = false; submitBtn.innerHTML = '<i class="fas fa-upload mr-2"></i> Upload'; });
-        });
-
-        document.getElementById('enhanceModal').addEventListener('click', function(e) {
-            if (e.target === this) closeModal();
-        });
-    </script>
-</body>
-</html>'''
-
 # ===== ROUTES =====
 
 @app.route('/')
 def index():
-    return render_template_string(INDEX_HTML)
+    """Public homepage"""
+    return render_template('index.html')
 
 @app.route('/admin')
 def admin():
+    """Admin dashboard"""
     orders = load_orders()
-    return render_template_string(ADMIN_HTML, orders=orders)
+    return render_template('admin.html', orders=orders)
 
 @app.route('/api/upload', methods=['POST'])
 def upload_photo():
+    """API endpoint for photo upload"""
     try:
         if 'photo' not in request.files:
             return jsonify({'success': False, 'error': 'No file uploaded'}), 400
@@ -687,11 +119,13 @@ def upload_photo():
 
 @app.route('/api/orders', methods=['GET'])
 def get_orders():
+    """Get all orders"""
     orders = load_orders()
     return jsonify({'orders': orders}), 200
 
 @app.route('/api/orders/<int:order_id>/status', methods=['PUT'])
 def update_order_status(order_id):
+    """Update order status"""
     try:
         data = request.get_json()
         new_status = data.get('status')
@@ -715,6 +149,7 @@ def update_order_status(order_id):
 
 @app.route('/api/orders/<int:order_id>/payment', methods=['PUT'])
 def update_payment_status(order_id):
+    """Update payment status"""
     try:
         data = request.get_json()
         payment_status = data.get('payment_status')
@@ -738,6 +173,7 @@ def update_payment_status(order_id):
 
 @app.route('/api/orders/<int:order_id>/enhance', methods=['POST'])
 def upload_enhanced_photo(order_id):
+    """Upload enhanced version of a photo"""
     try:
         if 'enhanced_photo' not in request.files:
             return jsonify({'success': False, 'error': 'No file uploaded'}), 400
@@ -775,13 +211,15 @@ def upload_enhanced_photo(order_id):
 
 @app.route('/uploads/<filename>')
 def serve_upload(filename):
+    """Serve original uploads"""
     return send_file(os.path.join(UPLOAD_FOLDER, filename))
 
 @app.route('/enhanced/<filename>')
 def serve_enhanced(filename):
+    """Serve enhanced photos"""
     return send_file(os.path.join(ENHANCED_FOLDER, filename))
 
-# Vercel handler
+# ===== VERCEL HANDLER =====
 def handler(request, context):
     return app(request, context)
 
