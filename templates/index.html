@@ -106,20 +106,19 @@
             background: transparent;
             transition: all 0.3s ease;
             cursor: pointer;
+            padding: 16px 32px;
+            border-radius: 9999px;
+            font-weight: 700;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
         }
         .btn-outline:hover {
             background: #2e86c1;
             color: white;
             transform: translateY(-2px);
         }
-        .admin-link {
-            color: #2e86c1;
-            font-weight: 500;
-        }
-        .admin-link:hover {
-            color: white;
-        }
-        /* Footer styles */
         .footer-link {
             color: rgba(255,255,255,0.4);
             transition: all 0.3s ease;
@@ -127,6 +126,9 @@
         }
         .footer-link:hover {
             color: #2e86c1;
+        }
+        @media (max-width: 768px) {
+            .mobile-hidden { display: none; }
         }
     </style>
 </head>
@@ -150,14 +152,14 @@
                     </div>
                     <span style="font-size:20px; font-weight:bold; color:white;">Apex<span style="color:#2e86c1;">Built</span></span>
                 </a>
-                <div style="display:none; align-items:center; gap:24px; font-size:0.875rem;">
+                <div style="display:flex; align-items:center; gap:24px; font-size:0.875rem;">
                     <a href="#home" class="nav-link">Home</a>
                     <a href="#pricing" class="nav-link">Pricing</a>
                     <a href="#upload" class="nav-link">Upload</a>
-                    <a href="/admin" class="nav-link admin-link">Dashboard</a>
+                    <a href="/admin" class="nav-link" style="color:#2e86c1;">Dashboard</a>
                 </div>
                 <div style="display:flex; align-items:center; gap:12px;">
-                    <button onclick="document.getElementById('upload').scrollIntoView({behavior:'smooth'})" class="btn-primary" style="padding:8px 20px; border-radius:9999px; font-weight:600; font-size:0.875rem; box-shadow:0 10px 15px -3px rgba(0,0,0,0.1); display:none;">
+                    <button onclick="document.getElementById('upload').scrollIntoView({behavior:'smooth'})" class="btn-primary" style="padding:8px 20px; border-radius:9999px; font-weight:600; font-size:0.875rem; box-shadow:0 10px 15px -3px rgba(0,0,0,0.1);">
                         <i class="fas fa-upload" style="margin-right:6px;"></i> Upload
                     </button>
                 </div>
@@ -183,7 +185,7 @@
                     <button onclick="document.getElementById('upload').scrollIntoView({behavior:'smooth'})" class="btn-primary" style="padding:16px 32px; border-radius:9999px; font-weight:700; box-shadow:0 20px 25px -5px rgba(0,0,0,0.1); display:flex; align-items:center; gap:8px; font-size:1rem;">
                         <i class="fas fa-cloud-upload-alt"></i> Upload Now
                     </button>
-                    <a href="#pricing" class="btn-outline" style="padding:16px 32px; border-radius:9999px; font-weight:700; display:flex; align-items:center; gap:8px; font-size:1rem; text-decoration:none;">
+                    <a href="#pricing" class="btn-outline">
                         <i class="fas fa-tag"></i> Pricing
                     </a>
                 </div>
@@ -212,11 +214,11 @@
                             <i class="fas fa-clock"></i>
                             <span style="font-weight:600;">Delivery within 30 minutes</span>
                         </div>
-                        <div style="margin-top:24px; space-y:8px; font-size:0.875rem; color:#4b5563;">
-                            <p><i class="fas fa-check-circle" style="color:#2e86c1; margin-right:8px;"></i> AI-powered enhancement</p>
-                            <p><i class="fas fa-check-circle" style="color:#2e86c1; margin-right:8px;"></i> Color correction & sharpening</p>
-                            <p><i class="fas fa-check-circle" style="color:#2e86c1; margin-right:8px;"></i> Manual quality check</p>
-                            <p><i class="fas fa-check-circle" style="color:#2e86c1; margin-right:8px;"></i> Delivered to your email</p>
+                        <div style="margin-top:24px; text-align:left;">
+                            <p style="margin:8px 0; font-size:0.875rem; color:#4b5563;"><i class="fas fa-check-circle" style="color:#2e86c1; margin-right:8px;"></i> AI-powered enhancement</p>
+                            <p style="margin:8px 0; font-size:0.875rem; color:#4b5563;"><i class="fas fa-check-circle" style="color:#2e86c1; margin-right:8px;"></i> Color correction & sharpening</p>
+                            <p style="margin:8px 0; font-size:0.875rem; color:#4b5563;"><i class="fas fa-check-circle" style="color:#2e86c1; margin-right:8px;"></i> Manual quality check</p>
+                            <p style="margin:8px 0; font-size:0.875rem; color:#4b5563;"><i class="fas fa-check-circle" style="color:#2e86c1; margin-right:8px;"></i> Delivered to your email</p>
                         </div>
                         <button onclick="document.getElementById('upload').scrollIntoView({behavior:'smooth'})" class="btn-primary" style="margin-top:32px; width:100%; padding:16px; border-radius:9999px; font-weight:700; font-size:1.125rem; box-shadow:0 10px 15px -3px rgba(0,0,0,0.1);">
                             <i class="fas fa-upload" style="margin-right:8px;"></i> Start Now
@@ -242,12 +244,12 @@
                         <i class="fas fa-check-circle" style="color:#065f46; font-size:1.25rem; margin-top:2px;"></i>
                         <div>
                             <p style="font-weight:600; color:#065f46;">Your photo has been received!</p>
-                            <p style="font-size:0.875rem; color:#065f46/80;">Please complete payment. Once payment is confirmed, your photo will be manually enhanced and sent to your email.</p>
+                            <p style="font-size:0.875rem; color:#065f46;">Please complete payment. Once payment is confirmed, your photo will be manually enhanced and sent to your email.</p>
                         </div>
                     </div>
                 </div>
 
-                <form id="uploadForm" style="space-y:24px;" enctype="multipart/form-data">
+                <form id="uploadForm" enctype="multipart/form-data">
                     <div id="dropZone" class="drop-zone" style="padding:48px; text-align:center;">
                         <div style="display:flex; flex-direction:column; align-items:center; gap:16px;">
                             <div style="width:80px; height:80px; border-radius:50%; background:rgba(26,82,118,0.1); display:flex; align-items:center; justify-content:center; color:#1a5276; font-size:2rem;">
@@ -262,18 +264,18 @@
                         </div>
                     </div>
 
-                    <div id="thumbnailContainer" style="display:none; margin-top:16px; display:flex; align-items:center; gap:16px; padding:16px; background:#f9fafb; border-radius:12px;">
+                    <div id="thumbnailContainer" style="display:none; margin-top:16px; align-items:center; gap:16px; padding:16px; background:#f9fafb; border-radius:12px;">
                         <img id="thumbnailPreview" class="thumbnail-preview" src="#" alt="Preview" />
                         <div>
                             <p id="fileName" style="font-weight:600; color:#0b2b44;"></p>
                             <p id="fileSize" style="font-size:0.875rem; color:#9ca3af;"></p>
                         </div>
-                        <button type="button" id="removeFile" style="margin-left:auto; color:#ef4444; background:none; border:none; cursor:pointer;">
-                            <i class="fas fa-times-circle" style="font-size:1.25rem;"></i>
+                        <button type="button" id="removeFile" style="margin-left:auto; color:#ef4444; background:none; border:none; cursor:pointer; font-size:1.25rem;">
+                            <i class="fas fa-times-circle"></i>
                         </button>
                     </div>
 
-                    <div style="display:grid; grid-template-columns:1fr; gap:16px;">
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:24px;">
                         <div>
                             <label style="font-size:0.875rem; font-weight:600; color:#0b2b44; display:block; margin-bottom:4px;">Full Name *</label>
                             <input type="text" name="name" placeholder="John Doe" class="contact-input" required />
@@ -283,12 +285,12 @@
                             <input type="email" name="email" placeholder="john@example.com" class="contact-input" required />
                         </div>
                     </div>
-                    <div>
+                    <div style="margin-top:16px;">
                         <label style="font-size:0.875rem; font-weight:600; color:#0b2b44; display:block; margin-bottom:4px;">Phone Number</label>
                         <input type="tel" name="phone" placeholder="+254 700 123 456" class="contact-input" />
                     </div>
 
-                    <button type="submit" class="btn-primary" style="width:100%; padding:16px; border-radius:12px; font-weight:700; font-size:1.125rem; box-shadow:0 10px 15px -3px rgba(0,0,0,0.1);">
+                    <button type="submit" class="btn-primary" style="width:100%; padding:16px; border-radius:12px; font-weight:700; font-size:1.125rem; box-shadow:0 10px 15px -3px rgba(0,0,0,0.1); margin-top:24px;">
                         <i class="fas fa-upload" style="margin-right:8px;"></i> Upload Photo
                     </button>
                 </form>
@@ -297,9 +299,9 @@
     </section>
 
     <!-- FOOTER -->
-    <footer style="background:#0b2b44; color:rgba(255,255,255,0.5); padding-top:48px; padding-bottom:24px; padding-left:16px; padding-right:16px; border-top:1px solid rgba(255,255,255,0.05);">
+    <footer style="background:#0b2b44; color:rgba(255,255,255,0.5); padding:48px 16px 24px; border-top:1px solid rgba(255,255,255,0.05);">
         <div style="max-width:1280px; margin:0 auto;">
-            <div style="display:grid; grid-template-columns:1fr; gap:32px;">
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:32px;">
                 <div>
                     <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
                         <div style="width:40px; height:40px; border-radius:12px; background:linear-gradient(135deg, #1a5276, #2e86c1); display:flex; align-items:center; justify-content:center; color:white; font-size:1.125rem;"><i class="fas fa-crown"></i></div>
@@ -309,19 +311,19 @@
                 </div>
                 <div>
                     <h4 style="color:white; font-weight:600; font-size:1rem; margin-bottom:12px;">Quick Links</h4>
-                    <ul style="space-y:6px; font-size:0.875rem;">
-                        <li><a href="#home" class="footer-link">Home</a></li>
-                        <li><a href="#pricing" class="footer-link">Pricing</a></li>
-                        <li><a href="#upload" class="footer-link">Upload</a></li>
-                        <li><a href="/admin" class="footer-link">Dashboard</a></li>
+                    <ul style="list-style:none; padding:0; margin:0;">
+                        <li style="margin:6px 0;"><a href="#home" class="footer-link">Home</a></li>
+                        <li style="margin:6px 0;"><a href="#pricing" class="footer-link">Pricing</a></li>
+                        <li style="margin:6px 0;"><a href="#upload" class="footer-link">Upload</a></li>
+                        <li style="margin:6px 0;"><a href="/admin" class="footer-link">Dashboard</a></li>
                     </ul>
                 </div>
                 <div>
                     <h4 style="color:white; font-weight:600; font-size:1rem; margin-bottom:12px;">Contact</h4>
-                    <ul style="space-y:8px; font-size:0.875rem;">
-                        <li style="display:flex; align-items:flex-start; gap:12px;"><i class="fas fa-phone" style="color:#2e86c1; margin-top:4px;"></i><span>+254 700 123 456</span></li>
-                        <li style="display:flex; align-items:flex-start; gap:12px;"><i class="fas fa-envelope" style="color:#2e86c1; margin-top:4px;"></i><span>hello@apexbuilt.com</span></li>
-                        <li style="display:flex; align-items:flex-start; gap:12px;"><i class="fas fa-map-pin" style="color:#2e86c1; margin-top:4px;"></i><span>Nairobi, Kenya</span></li>
+                    <ul style="list-style:none; padding:0; margin:0; font-size:0.875rem;">
+                        <li style="display:flex; align-items:flex-start; gap:12px; margin:8px 0;"><i class="fas fa-phone" style="color:#2e86c1; margin-top:4px;"></i><span>+254 700 123 456</span></li>
+                        <li style="display:flex; align-items:flex-start; gap:12px; margin:8px 0;"><i class="fas fa-envelope" style="color:#2e86c1; margin-top:4px;"></i><span>hello@apexbuilt.com</span></li>
+                        <li style="display:flex; align-items:flex-start; gap:12px; margin:8px 0;"><i class="fas fa-map-pin" style="color:#2e86c1; margin-top:4px;"></i><span>Nairobi, Kenya</span></li>
                     </ul>
                 </div>
             </div>
