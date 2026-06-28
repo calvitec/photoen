@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, send_file, redirect, url_for, flash
+from flask import Flask, request, jsonify, render_template, send_file
 from flask_sqlalchemy import SQLAlchemy
 from flask_mail import Mail, Message
 from datetime import datetime
@@ -7,7 +7,6 @@ import uuid
 from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
 
-# Load environment variables
 load_dotenv()
 
 app = Flask(__name__)
@@ -16,7 +15,10 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
 
 # Database
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///orders.db')
+database_url = os.environ.get('DATABASE_URL')
+if database_url and database_url.startswith('postgres://'):
+    database_url = database_url.replace('postgres://', 'postgresql://', 1)
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url or 'sqlite:///orders.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # File Upload
@@ -53,9 +55,9 @@ class Order(db.Model):
     original_filename = db.Column(db.String(200), nullable=False)
     stored_filename = db.Column(db.String(200), nullable=False)
     enhanced_filename = db.Column(db.String(200))
-    status = db.Column(db.String(20), default='pending')  # pending, processing, completed
-    payment_status = db.Column(db.String(20), default='pending')  # pending, paid
-    amount = db.Column(db.Float, default=100.00)  # KSh 100
+    status = db.Column(db.String(20), default='pending')
+    payment_status = db.Column(db.String(20), default='pending')
+    amount = db.Column(db.Float, default=100.00)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
@@ -141,7 +143,6 @@ def admin():
 def upload_photo():
     """API endpoint for photo upload"""
     try:
-        # Check if file is present
         if 'photo' not in request.files:
             return jsonify({'success': False, 'error': 'No file uploaded'}), 400
 
@@ -150,9 +151,8 @@ def upload_photo():
             return jsonify({'success': False, 'error': 'No file selected'}), 400
 
         if not allowed_file(file.filename):
-            return jsonify({'success': False, 'error': 'File type not allowed. Use JPG, JPEG, PNG, or WEBP'}), 400
+            return jsonify({'success': False, 'error': 'File type not allowed'}), 400
 
-        # Get form data
         customer_name = request.form.get('name', '').strip()
         customer_email = request.form.get('email', '').strip()
         customer_phone = request.form.get('phone', '').strip()
@@ -160,13 +160,11 @@ def upload_photo():
         if not customer_name or not customer_email:
             return jsonify({'success': False, 'error': 'Name and email are required'}), 400
 
-        # Save file
         original_filename = secure_filename(file.filename)
         unique_filename = f"{uuid.uuid4().hex}_{original_filename}"
         file_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
         file.save(file_path)
 
-        # Create order in database
         order_id = generate_order_id()
         order = Order(
             order_id=order_id,
@@ -196,14 +194,6 @@ def get_orders():
     orders = Order.query.order_by(Order.created_at.desc()).all()
     return jsonify({'orders': [o.to_dict() for o in orders]}), 200
 
-@app.route('/api/orders/<int:order_id>', methods=['GET'])
-def get_order(order_id):
-    """Get a specific order"""
-    order = Order.query.get(order_id)
-    if not order:
-        return jsonify({'success': False, 'error': 'Order not found'}), 404
-    return jsonify({'order': order.to_dict()}), 200
-
 @app.route('/api/orders/<int:order_id>/status', methods=['PUT'])
 def update_order_status(order_id):
     """Update order status"""
@@ -221,7 +211,6 @@ def update_order_status(order_id):
         order.status = new_status
         db.session.commit()
 
-        # If status is 'completed' and enhanced file exists, send email
         if new_status == 'completed' and order.enhanced_filename:
             success, message = send_enhanced_photo(order)
             return jsonify({
@@ -231,49 +220,6 @@ def update_order_status(order_id):
             }), 200
 
         return jsonify({'success': True, 'message': f'Status updated to {new_status}'}), 200
-
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-@app.route('/api/orders/<int:order_id>/enhance', methods=['POST'])
-def upload_enhanced_photo(order_id):
-    """Upload enhanced version of a photo"""
-    try:
-        if 'enhanced_photo' not in request.files:
-            return jsonify({'success': False, 'error': 'No file uploaded'}), 400
-
-        file = request.files['enhanced_photo']
-        if file.filename == '':
-            return jsonify({'success': False, 'error': 'No file selected'}), 400
-
-        if not allowed_file(file.filename):
-            return jsonify({'success': False, 'error': 'File type not allowed'}), 400
-
-        order = Order.query.get(order_id)
-        if not order:
-            return jsonify({'success': False, 'error': 'Order not found'}), 404
-
-        # Save enhanced file
-        original_filename = secure_filename(file.filename)
-        unique_filename = f"enhanced_{uuid.uuid4().hex}_{original_filename}"
-        file_path = os.path.join(app.config['ENHANCED_FOLDER'], unique_filename)
-        file.save(file_path)
-
-        # Update order
-        order.enhanced_filename = unique_filename
-        order.status = 'completed'
-        db.session.commit()
-
-        # Send email with enhanced photo
-        success, message = send_enhanced_photo(order)
-
-        return jsonify({
-            'success': True,
-            'message': 'Enhanced photo uploaded and email sent' if success else f'Enhanced photo uploaded but {message}',
-            'enhanced_filename': unique_filename,
-            'email_sent': success
-        }), 200
 
     except Exception as e:
         db.session.rollback()
@@ -302,6 +248,46 @@ def update_payment_status(order_id):
         db.session.rollback()
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/api/orders/<int:order_id>/enhance', methods=['POST'])
+def upload_enhanced_photo(order_id):
+    """Upload enhanced version of a photo"""
+    try:
+        if 'enhanced_photo' not in request.files:
+            return jsonify({'success': False, 'error': 'No file uploaded'}), 400
+
+        file = request.files['enhanced_photo']
+        if file.filename == '':
+            return jsonify({'success': False, 'error': 'No file selected'}), 400
+
+        if not allowed_file(file.filename):
+            return jsonify({'success': False, 'error': 'File type not allowed'}), 400
+
+        order = Order.query.get(order_id)
+        if not order:
+            return jsonify({'success': False, 'error': 'Order not found'}), 404
+
+        original_filename = secure_filename(file.filename)
+        unique_filename = f"enhanced_{uuid.uuid4().hex}_{original_filename}"
+        file_path = os.path.join(app.config['ENHANCED_FOLDER'], unique_filename)
+        file.save(file_path)
+
+        order.enhanced_filename = unique_filename
+        order.status = 'completed'
+        db.session.commit()
+
+        success, message = send_enhanced_photo(order)
+
+        return jsonify({
+            'success': True,
+            'message': 'Enhanced photo uploaded and email sent' if success else f'Enhanced photo uploaded but {message}',
+            'enhanced_filename': unique_filename,
+            'email_sent': success
+        }), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/uploads/<filename>')
 def serve_upload(filename):
     """Serve original uploads"""
@@ -316,6 +302,5 @@ def serve_enhanced(filename):
 with app.app_context():
     db.create_all()
 
-# ===== RUN APP =====
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
