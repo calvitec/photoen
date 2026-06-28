@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template, send_file
+from flask import Flask, request, jsonify, render_template, send_file, send_from_directory
 from datetime import datetime
 import os
 import uuid
@@ -9,7 +9,6 @@ app = Flask(__name__)
 app.secret_key = 'dev-secret-key-12345'
 
 # ===== CONFIGURATION =====
-# Use /tmp for Vercel, local folder for development
 if os.environ.get('VERCEL'):
     UPLOAD_FOLDER = '/tmp/uploads'
     ENHANCED_FOLDER = '/tmp/enhanced'
@@ -52,27 +51,24 @@ def generate_order_id():
 
 @app.route('/')
 def index():
-    """Public homepage"""
     return render_template('index.html')
 
 @app.route('/admin')
 def admin():
-    """Admin dashboard - no login required"""
     orders = load_orders()
-    # Calculate stats
     stats = {
         'total': len(orders),
         'pending': len([o for o in orders if o['status'] == 'pending']),
         'processing': len([o for o in orders if o['status'] == 'processing']),
         'completed': len([o for o in orders if o['status'] == 'completed']),
         'paid': len([o for o in orders if o['payment_status'] == 'paid']),
+        'unpaid': len([o for o in orders if o['payment_status'] == 'pending']),
         'revenue': sum([o.get('amount', 100) for o in orders if o['payment_status'] == 'paid'])
     }
     return render_template('admin.html', orders=orders, stats=stats)
 
 @app.route('/api/upload', methods=['POST'])
 def upload_photo():
-    """API endpoint for photo upload"""
     try:
         if 'photo' not in request.files:
             return jsonify({'success': False, 'error': 'No file uploaded'}), 400
@@ -111,7 +107,8 @@ def upload_photo():
             'status': 'pending',
             'payment_status': 'pending',
             'amount': 100.00,
-            'created_at': datetime.utcnow().isoformat()
+            'created_at': datetime.utcnow().isoformat(),
+            'updated_at': datetime.utcnow().isoformat()
         }
         
         orders.append(new_order)
@@ -128,13 +125,11 @@ def upload_photo():
 
 @app.route('/api/orders', methods=['GET'])
 def get_orders():
-    """Get all orders"""
     orders = load_orders()
     return jsonify({'orders': orders}), 200
 
 @app.route('/api/orders/<int:order_id>/status', methods=['PUT'])
 def update_order_status(order_id):
-    """Update order status"""
     try:
         data = request.get_json()
         new_status = data.get('status')
@@ -149,16 +144,25 @@ def update_order_status(order_id):
             return jsonify({'success': False, 'error': 'Order not found'}), 404
 
         order['status'] = new_status
+        order['updated_at'] = datetime.utcnow().isoformat()
+        
+        # Auto-mark as paid when processing starts (realistic business logic)
+        if new_status == 'processing' and order['payment_status'] == 'pending':
+            order['payment_status'] = 'paid'
+        
         save_orders(orders)
 
-        return jsonify({'success': True, 'message': f'Status updated to {new_status}'}), 200
+        return jsonify({
+            'success': True, 
+            'message': f'Status updated to {new_status}',
+            'order': order
+        }), 200
 
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/orders/<int:order_id>/payment', methods=['PUT'])
 def update_payment_status(order_id):
-    """Update payment status"""
     try:
         data = request.get_json()
         payment_status = data.get('payment_status')
@@ -173,16 +177,25 @@ def update_payment_status(order_id):
             return jsonify({'success': False, 'error': 'Order not found'}), 404
 
         order['payment_status'] = payment_status
+        order['updated_at'] = datetime.utcnow().isoformat()
+        
+        # If payment is confirmed and status is pending, auto-start processing
+        if payment_status == 'paid' and order['status'] == 'pending':
+            order['status'] = 'processing'
+        
         save_orders(orders)
 
-        return jsonify({'success': True, 'message': f'Payment status updated to {payment_status}'}), 200
+        return jsonify({
+            'success': True, 
+            'message': f'Payment status updated to {payment_status}',
+            'order': order
+        }), 200
 
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/orders/<int:order_id>/enhance', methods=['POST'])
 def upload_enhanced_photo(order_id):
-    """Upload enhanced version of a photo"""
     try:
         if 'enhanced_photo' not in request.files:
             return jsonify({'success': False, 'error': 'No file uploaded'}), 400
@@ -207,26 +220,58 @@ def upload_enhanced_photo(order_id):
 
         order['enhanced_filename'] = unique_filename
         order['status'] = 'completed'
+        order['updated_at'] = datetime.utcnow().isoformat()
         save_orders(orders)
 
         return jsonify({
             'success': True,
             'message': 'Enhanced photo uploaded successfully',
-            'enhanced_filename': unique_filename
+            'enhanced_filename': unique_filename,
+            'download_url': f'/enhanced/{unique_filename}'
         }), 200
+
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/orders/<int:order_id>', methods=['DELETE'])
+def delete_order(order_id):
+    """Delete an order"""
+    try:
+        orders = load_orders()
+        order = next((o for o in orders if o['id'] == order_id), None)
+        
+        if not order:
+            return jsonify({'success': False, 'error': 'Order not found'}), 404
+
+        # Delete files if they exist
+        try:
+            original_path = os.path.join(UPLOAD_FOLDER, order['stored_filename'])
+            if os.path.exists(original_path):
+                os.remove(original_path)
+            
+            if order.get('enhanced_filename'):
+                enhanced_path = os.path.join(ENHANCED_FOLDER, order['enhanced_filename'])
+                if os.path.exists(enhanced_path):
+                    os.remove(enhanced_path)
+        except:
+            pass  # Continue even if file deletion fails
+
+        # Remove from orders list
+        orders = [o for o in orders if o['id'] != order_id]
+        save_orders(orders)
+
+        return jsonify({'success': True, 'message': 'Order deleted successfully'}), 200
 
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/uploads/<filename>')
 def serve_upload(filename):
-    """Serve original uploads"""
-    return send_file(os.path.join(UPLOAD_FOLDER, filename))
+    return send_from_directory(UPLOAD_FOLDER, filename, as_attachment=True)
 
 @app.route('/enhanced/<filename>')
 def serve_enhanced(filename):
-    """Serve enhanced photos"""
-    return send_file(os.path.join(ENHANCED_FOLDER, filename))
+    return send_from_directory(ENHANCED_FOLDER, filename, as_attachment=True)
 
 # ===== VERCEL HANDLER =====
 def handler(request, context):
