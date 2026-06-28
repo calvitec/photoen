@@ -24,10 +24,6 @@
         .status-completed { background: #d1fae5; color: #065f46; }
         .payment-paid { background: #d1fae5; color: #065f46; }
         .payment-pending { background: #fee2e2; color: #991b1b; }
-        .admin-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
-        .admin-table th { background: #f8fafc; font-weight: 600; color: #1e293b; padding: 12px 16px; text-align: left; border-bottom: 2px solid #e2e8f0; }
-        .admin-table td { padding: 12px 16px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
-        .admin-table tr:hover { background: #f8fafc; }
         .btn-action { padding: 4px 12px; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; border: none; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 4px; }
         .btn-action:hover { transform: translateY(-1px); }
         .btn-process { background: #dbeafe; color: #1e40af; }
@@ -38,15 +34,15 @@
         .btn-paid:hover { background: #ddd6fe; }
         .btn-view { background: #f3f4f6; color: #374151; }
         .btn-view:hover { background: #e5e7eb; }
-        .btn-download { background: #dbeafe; color: #1e40af; }
-        .btn-download:hover { background: #bfdbfe; }
         .btn-delete { background: #fee2e2; color: #dc2626; }
         .btn-delete:hover { background: #fecaca; }
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 50; padding: 16px; }
-        .modal-content { background: white; border-radius: 16px; padding: 32px; max-width: 448px; width: 100%; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); max-height: 90vh; overflow-y: auto; }
+        .modal-content { background: white; border-radius: 16px; padding: 32px; max-width: 448px; width: 100%; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); }
         .drop-zone-enhanced { border: 2px dashed #1a5276; border-radius: 12px; padding: 32px; text-align: center; cursor: pointer; transition: all 0.3s ease; }
         .drop-zone-enhanced:hover { background: rgba(26, 82, 118, 0.05); }
         .stat-number { font-size: 2rem; font-weight: 700; }
+        .db-status-connected { background: #ecfdf5; border: 1px solid #d1fae5; }
+        .db-status-disconnected { background: #fef2f2; border: 1px solid #fecaca; }
         @media (max-width: 768px) {
             .admin-table { font-size: 0.75rem; }
             .admin-table th, .admin-table td { padding: 8px 10px; }
@@ -86,7 +82,56 @@
     <!-- Main Content -->
     <div style="background:#f8fafc; min-height:100vh; padding:24px 16px;">
         <div style="max-width:1280px; margin:0 auto;">
-            <!-- Stats -->
+            
+            <!-- ===== DATABASE STATUS INDICATOR ===== -->
+            <div style="margin-bottom:20px;">
+                <div class="{% if db_status.connected %}db-status-connected{% else %}db-status-disconnected{% endif %}" 
+                     style="border-radius:12px; padding:14px 20px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <span style="font-size:1.5rem;">
+                            {% if db_status.connected %}
+                                <i class="fas fa-check-circle" style="color:#10b981;"></i>
+                            {% else %}
+                                <i class="fas fa-exclamation-circle" style="color:#ef4444;"></i>
+                            {% endif %}
+                        </span>
+                        <div>
+                            <span style="font-weight:600; color:#0b2b44;">Database Status:</span>
+                            <span style="font-weight:500; color:{% if db_status.connected %}#065f46{% else %}#991b1b{% endif %};">
+                                {% if db_status.connected %}
+                                    ✅ Connected to {{ db_status.type|capitalize }}
+                                {% else %}
+                                    ❌ Using JSON Fallback
+                                {% endif %}
+                            </span>
+                            {% if db_status.connected %}
+                                <span style="font-size:0.75rem; color:#6b7280; margin-left:8px;">
+                                    <i class="fas fa-database"></i> Orders Table
+                                </span>
+                            {% else %}
+                                <span style="font-size:0.75rem; color:#991b1b; margin-left:8px;">
+                                    <i class="fas fa-exclamation-triangle"></i> Data saved locally
+                                </span>
+                            {% endif %}
+                            {% if db_status.error %}
+                                <span style="font-size:0.7rem; color:#991b1b; display:block; margin-top:2px;">
+                                    ⚠️ {{ db_status.error[:100] }}
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                        <button onclick="testDatabase()" style="padding:6px 16px; border-radius:8px; background:#1a5276; color:white; font-size:0.75rem; border:none; cursor:pointer; transition:background 0.3s;">
+                            <i class="fas fa-sync-alt"></i> Test Connection
+                        </button>
+                        <a href="/api/status" target="_blank" style="padding:6px 16px; border-radius:8px; background:#f3f4f6; color:#374151; font-size:0.75rem; border:1px solid #e5e7eb; text-decoration:none; display:inline-flex; align-items:center; gap:4px;">
+                            <i class="fas fa-info-circle"></i> API Status
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats Cards -->
             <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:12px; margin-bottom:24px;">
                 <div class="admin-card">
                     <div style="color:#1a5276; font-size:1.5rem;"><i class="fas fa-shopping-cart"></i></div>
@@ -133,52 +178,52 @@
                 </div>
 
                 {% if orders %}
-                <table class="admin-table">
+                <table style="width:100%; border-collapse:collapse; font-size:0.875rem;">
                     <thead>
                         <tr>
-                            <th>#</th>
-                            <th>Order ID</th>
-                            <th>Customer</th>
-                            <th>Email</th>
-                            <th>Status</th>
-                            <th>Payment</th>
-                            <th>Enhanced</th>
-                            <th style="min-width:180px;">Actions</th>
+                            <th style="background:#f8fafc; font-weight:600; color:#1e293b; padding:12px 16px; text-align:left; border-bottom:2px solid #e2e8f0;">#</th>
+                            <th style="background:#f8fafc; font-weight:600; color:#1e293b; padding:12px 16px; text-align:left; border-bottom:2px solid #e2e8f0;">Order ID</th>
+                            <th style="background:#f8fafc; font-weight:600; color:#1e293b; padding:12px 16px; text-align:left; border-bottom:2px solid #e2e8f0;">Customer</th>
+                            <th style="background:#f8fafc; font-weight:600; color:#1e293b; padding:12px 16px; text-align:left; border-bottom:2px solid #e2e8f0;">Email</th>
+                            <th style="background:#f8fafc; font-weight:600; color:#1e293b; padding:12px 16px; text-align:left; border-bottom:2px solid #e2e8f0;">Status</th>
+                            <th style="background:#f8fafc; font-weight:600; color:#1e293b; padding:12px 16px; text-align:left; border-bottom:2px solid #e2e8f0;">Payment</th>
+                            <th style="background:#f8fafc; font-weight:600; color:#1e293b; padding:12px 16px; text-align:left; border-bottom:2px solid #e2e8f0;">Enhanced</th>
+                            <th style="background:#f8fafc; font-weight:600; color:#1e293b; padding:12px 16px; text-align:left; border-bottom:2px solid #e2e8f0; min-width:180px;">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="ordersBody">
                         {% for order in orders %}
-                        <tr id="order-{{ order.id }}" class="order-row">
-                            <td style="font-weight:500; color:#0b2b44;">{{ loop.index }}</td>
-                            <td style="font-family:monospace; font-size:0.75rem; color:#1a5276; font-weight:600;">{{ order.order_id }}</td>
-                            <td style="font-weight:500;">{{ order.customer_name }}</td>
-                            <td style="color:#4b5563; font-size:0.8rem;">{{ order.customer_email }}</td>
-                            <td>
+                        <tr id="order-{{ order.id }}" class="order-row" style="border-bottom:1px solid #f1f5f9;">
+                            <td style="padding:12px 16px; font-weight:500; color:#0b2b44;">{{ loop.index }}</td>
+                            <td style="padding:12px 16px; font-family:monospace; font-size:0.75rem; color:#1a5276; font-weight:600;">{{ order.order_id }}</td>
+                            <td style="padding:12px 16px; font-weight:500;">{{ order.customer_name }}</td>
+                            <td style="padding:12px 16px; color:#4b5563; font-size:0.8rem;">{{ order.customer_email }}</td>
+                            <td style="padding:12px 16px;">
                                 <span class="status-badge status-{{ order.status }}">
                                     {{ order.status|capitalize }}
                                 </span>
                             </td>
-                            <td>
+                            <td style="padding:12px 16px;">
                                 <span class="status-badge payment-{{ order.payment_status }}">
                                     <i class="fas {% if order.payment_status == 'paid' %}fa-check-circle{% else %}fa-times-circle{% endif %}"></i>
                                     {{ order.payment_status|capitalize }}
                                 </span>
                             </td>
-                            <td>
+                            <td style="padding:12px 16px;">
                                 {% if order.enhanced_filename %}
                                     <span style="font-size:0.75rem; color:#10b981;"><i class="fas fa-check-circle"></i> Ready</span>
                                 {% else %}
                                     <span style="font-size:0.75rem; color:#9ca3af;">—</span>
                                 {% endif %}
                             </td>
-                            <td>
+                            <td style="padding:12px 16px;">
                                 <div style="display:flex; gap:4px; flex-wrap:wrap;">
-                                    <!-- Download Original -->
-                                    <a href="/uploads/{{ order.stored_filename }}" target="_blank" class="btn-action btn-download" title="Download Original">
-                                        <i class="fas fa-download"></i>
-                                    </a>
+                                    {% if order.stored_filename %}
+                                        <a href="/uploads/{{ order.stored_filename }}" target="_blank" class="btn-action" style="background:#dbeafe; color:#1e40af;" title="Download Original">
+                                            <i class="fas fa-download"></i>
+                                        </a>
+                                    {% endif %}
                                     
-                                    <!-- Status Actions -->
                                     {% if order.status == 'pending' and order.payment_status == 'pending' %}
                                         <button onclick="markPaid({{ order.id }})" class="btn-action btn-paid" title="Mark as Paid">
                                             <i class="fas fa-credit-card"></i> Pay
@@ -197,14 +242,12 @@
                                         </button>
                                     {% endif %}
                                     
-                                    <!-- View Enhanced -->
                                     {% if order.enhanced_filename %}
-                                        <a href="/enhanced/{{ order.enhanced_filename }}" target="_blank" class="btn-action btn-view" title="Download Enhanced">
+                                        <a href="/enhanced/{{ order.enhanced_filename }}" target="_blank" class="btn-action" style="background:#f3f4f6; color:#374151;" title="Download Enhanced">
                                             <i class="fas fa-eye"></i>
                                         </a>
                                     {% endif %}
                                     
-                                    <!-- Delete -->
                                     <button onclick="deleteOrder({{ order.id }})" class="btn-action btn-delete" title="Delete Order">
                                         <i class="fas fa-trash"></i>
                                     </button>
@@ -277,6 +320,36 @@
                 row.style.display = text.includes(searchTerm) ? '' : 'none';
             });
         });
+
+        // ===== TEST DATABASE =====
+        function testDatabase() {
+            const btn = event.target;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Testing...';
+            
+            fetch('/api/test-db')
+                .then(res => res.json())
+                .then(data => {
+                    let message = '📊 Database Status:\n\n';
+                    message += `🔗 Connected: ${data.connected ? '✅ Yes' : '❌ No'}\n`;
+                    message += `📁 Type: ${data.type}\n`;
+                    message += `📝 Orders: ${data.orders_count}\n`;
+                    
+                    if (data.error) {
+                        message += `\n⚠️ Error: ${data.error}`;
+                    }
+                    
+                    alert(message);
+                    location.reload();
+                })
+                .catch(err => {
+                    alert('❌ Error testing database: ' + err.message);
+                })
+                .finally(() => {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-sync-alt"></i> Test Connection';
+                });
+        }
 
         // ===== UPDATE STATUS =====
         function updateStatus(orderId, status) {
