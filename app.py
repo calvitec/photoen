@@ -199,7 +199,15 @@ def admin():
             'unpaid': len([o for o in orders if o.get('payment_status') == 'pending']),
             'revenue': sum([float(o.get('amount', 50)) for o in orders if o.get('payment_status') == 'paid'])
         }
-        return render_template('admin.html', orders=orders, stats=stats, db_connected=DB_CONNECTED, db_type=DB_TYPE)
+        
+        # Pass both formats for compatibility
+        return render_template('admin.html', 
+            orders=orders, 
+            stats=stats, 
+            db_connected=DB_CONNECTED,
+            db_type=DB_TYPE,
+            db_status={'connected': DB_CONNECTED, 'type': DB_TYPE}  # For backwards compatibility
+        )
     except Exception as e:
         return f"<h1>Error loading admin</h1><p>{str(e)}</p>", 500
 
