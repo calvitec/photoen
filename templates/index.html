@@ -1,60 +1,86 @@
 <!DOCTYPE html>
-<html lang="en" class="scroll-smooth">
+<html lang="en">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AI Photo Enhance — Professional Image Enhancement</title>
-    
+    <title>AI Photo Enhancement · ApexBuilt</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        brand: {
-                            dark: '#0f172a',      /* Deep slate blue */
-                            navy: '#1e293b',      /* Soft dark blue */
-                            blue: '#2563eb',      /* Royal Blue */
-                            light: '#3b82f6',     /* Light Blue */
-                            cream: '#f8fafc',     /* Ice White background */
-                        }
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                        serif: ['Playfair Display', 'serif']
-                    }
-                }
-            }
-        }
-    </script>
-    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet" />
-    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
     <style>
+        * { font-family: 'Inter', sans-serif; }
         .gradient-hero {
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
-        }
-        .gradient-hero::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            right: 0;
-            width: 50%;
-            height: 100%;
-            background: linear-gradient(135deg, transparent 40%, rgba(37, 99, 235, 0.05) 100%);
-            pointer-events: none;
+            background: linear-gradient(135deg, #0b2b44 0%, #1a5276 50%, #0b2b44 100%);
+            position: relative;
+            overflow: hidden;
         }
         .glass-card {
-            background: rgba(255, 255, 255, 0.03);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255,255,255,0.08);
         }
+        .btn-primary {
+            background: linear-gradient(135deg, #1a5276, #2e86c1);
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 20px 50px rgba(26, 82, 118, 0.4);
+        }
+        .pricing-card {
+            background: white;
+            border-radius: 24px;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 1px solid rgba(0,0,0,0.04);
+        }
+        .pricing-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 30px 70px rgba(26, 82, 118, 0.1);
+        }
+        .drop-zone {
+            border: 2px dashed #1a5276;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+            background: rgba(26, 82, 118, 0.03);
+        }
+        .drop-zone.drag-over {
+            border-color: #2e86c1;
+            background: rgba(26, 82, 118, 0.08);
+            transform: scale(1.01);
+        }
+        .contact-input {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 14px 18px;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+        .contact-input:focus {
+            outline: none;
+            border-color: #1a5276;
+            box-shadow: 0 0 0 4px rgba(26, 82, 118, 0.1);
+        }
+        .admin-card {
+            background: white;
+            border-radius: 16px;
+            transition: all 0.3s ease;
+            border: 1px solid #e2e8f0;
+        }
+        .admin-card:hover {
+            box-shadow: 0 8px 25px rgba(0,0,0,0.06);
+        }
+        .status-badge {
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .status-pending { background: #fef3c7; color: #92400e; }
+        .status-processing { background: #dbeafe; color: #1e40af; }
+        .status-completed { background: #d1fae5; color: #065f46; }
         .nav-link {
             position: relative;
-            font-weight: 500;
-            color: rgba(255, 255, 255, 0.7);
+            color: rgba(255,255,255,0.7);
             transition: color 0.3s;
         }
         .nav-link::after {
@@ -64,462 +90,569 @@
             left: 50%;
             width: 0;
             height: 2.5px;
-            background: #2563eb;
+            background: #2e86c1;
             transition: all 0.3s ease;
             transform: translateX(-50%);
             border-radius: 2px;
         }
         .nav-link:hover { color: white; }
         .nav-link:hover::after { width: 80%; }
-        
+        .section-title { font-weight: 800; letter-spacing: -0.02em; }
         .animate-float { animation: float 6s ease-in-out infinite; }
-        @keyframes float { 
-            0%, 100% { transform: translateY(0px); } 
-            50% { transform: translateY(-12px); } 
-        }
-        
-        .contact-input {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+        @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        .fade-slide { opacity: 0; transform: translateY(20px); animation: fadeSlide 0.6s ease-out forwards; }
+        @keyframes fadeSlide { 0% { opacity: 0; transform: translateY(20px); } 100% { opacity: 1; transform: translateY(0); } }
+        .thumbnail-preview {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
             border-radius: 12px;
-            padding: 14px 18px;
-            color: white;
-            transition: all 0.3s ease;
-            width: 100%;
+            border: 2px solid #e2e8f0;
         }
-        .contact-input:focus {
-            outline: none;
-            border-color: #2563eb;
-            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15);
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0b2b44; }
+        ::-webkit-scrollbar-thumb { background: #2e86c1; border-radius: 4px; }
+        .success-message {
+            background: #d1fae5;
+            border-left: 4px solid #065f46;
+            border-radius: 12px;
+            padding: 16px 20px;
         }
-        .drag-over {
-            border-color: #2563eb !important;
-            background: rgba(37, 99, 235, 0.05) !important;
+        .admin-table th {
+            background: #f8fafc;
+            font-weight: 600;
+            color: #1e293b;
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        .admin-table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #f1f5f9;
+            vertical-align: middle;
+        }
+        .admin-table tr:hover {
+            background: #f8fafc;
         }
     </style>
 </head>
-<body class="bg-white text-gray-800 antialiased font-sans">
+<body>
 
-    <div class="bg-brand-dark text-white/70 text-xs py-2 text-center border-b border-slate-800">
+    <!-- ===== TOP BAR ===== -->
+    <div class="bg-[#0b2b44] text-white/60 text-xs py-1.5 text-center border-b border-white/5">
         <div class="container mx-auto px-4 flex flex-wrap justify-center items-center gap-6">
-            <span class="flex items-center gap-1.5"><i class="fas fa-bolt text-brand-blue"></i> Fast 30-Min Delivery</span>
-            <span class="flex items-center gap-1.5"><i class="fas fa-envelope text-brand-blue"></i> support@ienhance.ai</span>
-            <span class="flex items-center gap-1.5"><i class="fas fa-shield-alt text-brand-blue"></i> Secure Manual Verification</span>
-            <span class="hidden md:inline flex items-center gap-1.5"><i class="far fa-clock text-brand-blue"></i> 24/7 AI Processing</span>
+            <span><i class="fas fa-phone text-[#2e86c1] mr-1"></i> +254 700 123 456</span>
+            <span><i class="fas fa-envelope text-[#2e86c1] mr-1"></i> hello@apexbuilt.com</span>
+            <span><i class="fas fa-clock text-[#2e86c1] mr-1"></i> 24/7 Support</span>
         </div>
     </div>
 
-    <div class="fixed top-12 left-0 right-0 z-50 px-4 sm:px-6 lg:px-8">
-        <nav id="main-nav" class="max-w-7xl mx-auto rounded-2xl glass-card transition-all duration-300">
-            <div class="px-6 lg:px-8">
-                <div class="flex items-center justify-between h-20">
-                    <a href="/" class="flex items-center gap-3 group">
-                        <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-brand-navy to-brand-blue flex items-center justify-center text-white font-bold text-lg shadow-md border border-brand-blue/20">
-                            <i class="fas fa-wand-magic-sparkles"></i>
-                        </div>
-                        <div>
-                            <div class="text-xl font-bold tracking-tight text-white">iEnhance <span class="text-brand-blue">AI</span></div>
-                            <div class="text-[9px] text-gray-400 tracking-[0.2em] uppercase font-medium">Professional Perfection</div>
-                        </div>
-                    </a>
-                    <div class="hidden lg:flex items-center gap-8">
-                        <a href="#services" class="nav-link">Features</a>
-                        <a href="#projects" class="nav-link">Showcase</a>
-                        <a href="#testimonials" class="nav-link">Reviews</a>
-                        <a href="#upload" class="nav-link">Enhance Now</a>
+    <!-- ===== NAVIGATION ===== -->
+    <nav class="fixed top-6 left-0 right-0 z-50 px-4">
+        <div class="max-w-7xl mx-auto glass-card rounded-2xl shadow-2xl border border-white/5">
+            <div class="flex items-center justify-between h-16 px-6">
+                <a href="/" class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#1a5276] to-[#2e86c1] flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                        <i class="fas fa-crown"></i>
                     </div>
-                    <div class="flex items-center gap-4">
-                        <div class="hidden md:flex items-center gap-2 text-white bg-brand-navy px-5 py-2.5 rounded-full text-sm font-semibold border border-brand-blue/20">
-                            <span class="text-xs text-gray-400">Only</span> <span class="text-brand-blue font-bold">KSh 100</span> / Photo
-                        </div>
-                        <button onclick="document.getElementById('upload').scrollIntoView({behavior:'smooth'})" class="hidden md:block px-6 py-2.5 rounded-full bg-gradient-to-r from-brand-blue to-brand-light hover:scale-[1.03] transition-all text-white font-semibold text-sm shadow-md shadow-brand-blue/10">
-                            Start Enhancing
-                        </button>
-                    </div>
+                    <span class="text-xl font-bold text-white">Apex<span class="text-[#2e86c1]">Built</span></span>
+                </a>
+                <div class="hidden md:flex items-center gap-6 text-sm">
+                    <a href="#home" class="nav-link">Home</a>
+                    <a href="#pricing" class="nav-link">Pricing</a>
+                    <a href="#upload" class="nav-link">Upload</a>
+                    <a href="#admin" class="nav-link">Dashboard</a>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button onclick="document.getElementById('upload').scrollIntoView({behavior:'smooth'})" class="px-5 py-2 rounded-full btn-primary text-white font-semibold text-sm shadow-lg">
+                        <i class="fas fa-upload mr-1.5"></i> Upload
+                    </button>
                 </div>
             </div>
-        </nav>
-    </div>
+        </div>
+    </nav>
 
-    <section class="gradient-hero min-h-screen flex items-center pt-32 relative overflow-hidden">
-        <div class="absolute w-[600px] h-[600px] bg-brand-blue rounded-full filter blur-[120px] opacity-10 -top-40 -right-20 pointer-events-none"></div>
-        <div class="absolute w-[400px] h-[400px] bg-brand-navy rounded-full filter blur-[100px] opacity-20 -bottom-20 -left-20 pointer-events-none"></div>
-        
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 relative z-10 w-full">
-            <div class="grid lg:grid-cols-2 gap-16 items-center">
-                <div class="space-y-6">
-                    <div class="inline-flex items-center gap-2 bg-brand-blue/10 backdrop-blur-sm px-4 py-2 rounded-full text-sm text-brand-light font-semibold border border-brand-blue/20">
-                        <span class="w-2.5 h-2.5 bg-brand-blue rounded-full animate-pulse"></span> Intelligent AI Restorations
+    <!-- ===== HERO ===== -->
+    <section id="home" class="gradient-hero min-h-[70vh] flex items-center pt-20 relative">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10">
+            <div class="text-center max-w-4xl mx-auto">
+                <div class="fade-slide">
+                    <div class="inline-flex items-center gap-2 bg-[#2e86c1]/10 backdrop-blur-sm px-4 py-2 rounded-full text-sm text-[#2e86c1] font-semibold mb-6 border border-[#2e86c1]/20">
+                        <span class="w-2.5 h-2.5 bg-[#2e86c1] rounded-full animate-pulse"></span> AI-Powered Enhancement
                     </div>
-                    <h1 class="text-4xl md:text-6xl font-extrabold text-white font-serif leading-[1.1]">
-                        AI Photo <span class="text-brand-blue">Enhancement</span><br>Perfected Instantly
+                    <h1 class="text-4xl md:text-7xl font-extrabold text-white leading-[1.05]">
+                        <span class="text-[#2e86c1]">AI</span> Photo Enhancement
                     </h1>
-                    <p class="text-gray-300 text-lg max-w-md leading-relaxed">
-                        Upload your photo and we'll professionally enhance it using AI. Get high-definition, crystal clear results rapidly.
+                    <p class="text-gray-300 text-lg md:text-xl mt-4 max-w-2xl mx-auto leading-relaxed">
+                        Upload your photo and we'll professionally enhance it using advanced AI technology.
                     </p>
-                    <div class="flex flex-wrap gap-4 pt-4">
-                        <button onclick="document.getElementById('upload').scrollIntoView({behavior:'smooth'})" class="px-8 py-4 rounded-full bg-gradient-to-r from-brand-blue to-brand-light text-white font-bold shadow-lg hover:scale-[1.02] transition-all flex items-center gap-2">
-                            <i class="fas fa-cloud-arrow-up"></i> Upload Your Photo
+                    <div class="flex flex-wrap justify-center gap-4 mt-8">
+                        <button onclick="document.getElementById('upload').scrollIntoView({behavior:'smooth'})" class="px-8 py-4 rounded-full btn-primary text-white font-bold shadow-lg flex items-center gap-2 text-base">
+                            <i class="fas fa-cloud-upload-alt"></i> Upload Now
                         </button>
-                        <div class="bg-white/5 backdrop-blur-sm rounded-2xl p-4 border border-white/10 flex items-center gap-4 max-w-xs shadow-xl">
-                            <div class="text-2xl font-bold text-brand-light font-serif">KSh 100</div>
-                            <div class="text-gray-400 text-xs border-l border-white/10 pl-3">Manually verified & enhanced within 30 minutes</div>
-                        </div>
-                    </div>
-                    <div class="flex flex-wrap items-center gap-6 pt-6 text-gray-400 text-sm border-t border-white/10">
-                        <div class="flex items-center gap-2"><span>⚡</span> 30 Min Turnaround</div>
-                        <div class="flex items-center gap-2"><span>🎨</span> Manual AI Fine-Tuning</div>
-                        <div class="flex items-center gap-2"><span>🔒</span> Fully Confidential</div>
-                    </div>
-                </div>
-                
-                <div class="relative animate-float hidden lg:block">
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="bg-white/5 backdrop-blur-sm rounded-2xl p-4 border border-white/10">
-                            <div class="w-full h-52 rounded-xl overflow-hidden bg-brand-dark relative">
-                                <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=400&fit=crop&q=40" alt="Blurry Portrait" class="w-full h-full object-cover opacity-50 blur-[2px]">
-                                <span class="absolute top-2 left-2 bg-black/60 px-2 py-0.5 rounded text-[10px] text-white">Before</span>
-                            </div>
-                            <p class="text-white font-semibold mt-3 text-sm">Low-Res Originals</p>
-                            <p class="text-gray-400 text-xs">Pixelated, blurry, or dark images</p>
-                        </div>
-                        <div class="bg-white/5 backdrop-blur-sm rounded-2xl p-4 border border-white/10 mt-8">
-                            <div class="w-full h-52 rounded-xl overflow-hidden bg-brand-dark relative">
-                                <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=400&fit=crop" alt="Enhanced Portrait" class="w-full h-full object-cover">
-                                <span class="absolute top-2 left-2 bg-brand-blue px-2 py-0.5 rounded text-[10px] text-white">Enhanced</span>
-                            </div>
-                            <p class="text-white font-semibold mt-3 text-sm">Face Clarity AI</p>
-                            <p class="text-gray-400 text-xs">Unmatched sharpness and color</p>
-                        </div>
-                    </div>
-                    <div class="absolute -bottom-4 -left-4 bg-brand-navy/90 backdrop-blur-md rounded-2xl px-5 py-3 border border-white/10 shadow-xl">
-                        <div class="flex items-center gap-2 mb-1">
-                            <span class="text-yellow-400 text-xs">★★★★★</span>
-                            <span class="text-white font-bold text-sm">4.9</span>
-                        </div>
-                        <p class="text-gray-300 text-xs italic">"Breathed new life into my old family photos!"</p>
+                        <a href="#pricing" class="px-8 py-4 rounded-full border-2 border-[#2e86c1] text-[#2e86c1] font-bold flex items-center gap-2 text-base hover:bg-[#2e86c1] hover:text-white transition">
+                            <i class="fas fa-tag"></i> Pricing
+                        </a>
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <section id="services" class="py-24 px-4 bg-brand-cream">
+    <!-- ===== PRICING ===== -->
+    <section id="pricing" class="py-20 px-4 bg-[#f0f7ff]">
         <div class="max-w-7xl mx-auto">
-            <div class="text-center mb-16">
-                <span class="text-brand-dark text-sm font-bold tracking-[0.2em] uppercase block mb-2">Our Capabilities</span>
-                <h2 class="text-4xl md:text-5xl font-bold text-brand-dark font-serif">Pro Enhancement Features</h2>
-                <div class="w-16 h-1 bg-brand-blue mx-auto mt-4 rounded-full"></div>
+            <div class="text-center mb-14">
+                <span class="text-[#1a5276] text-sm font-semibold tracking-[0.2em] uppercase">Pricing</span>
+                <h2 class="section-title text-4xl md:text-5xl text-[#0b2b44] mt-2">Simple, Transparent Pricing</h2>
+                <p class="text-gray-500 mt-3 max-w-md mx-auto">Professional AI photo enhancement at an affordable rate</p>
             </div>
-            
-            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {% for service in services %}
-                <div class="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-2 transition-all duration-300 border border-slate-100 group">
-                    <div class="relative h-56 overflow-hidden">
-                        <img src="{{ service.image }}" alt="{{ service.name }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
-                        <div class="absolute inset-0 bg-gradient-to-t from-brand-dark/90 via-brand-dark/20 to-transparent flex flex-col justify-end p-6">
-                            <div class="w-10 h-10 rounded-xl bg-brand-blue/20 backdrop-blur-md flex items-center justify-center text-brand-light text-lg mb-2">
-                                <i class="fas {{ service.icon }}"></i>
-                            </div>
-                            <h3 class="text-white font-bold text-xl">{{ service.name }}</h3>
+            <div class="max-w-md mx-auto">
+                <div class="pricing-card p-8 shadow-lg">
+                    <div class="text-center">
+                        <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#1a5276] to-[#2e86c1] flex items-center justify-center text-white text-3xl mx-auto shadow-lg mb-4">
+                            <i class="fas fa-image"></i>
                         </div>
-                    </div>
-                    <div class="p-6 space-y-4">
-                        <p class="text-gray-500 text-sm leading-relaxed">{{ service.description[:100] }}...</p>
-                        <div class="flex flex-wrap gap-2">
-                            {% for feature in service.features[:3] %}
-                            <span class="text-[11px] bg-brand-cream text-brand-navy px-3 py-1 rounded-full border border-gray-200 font-medium">{{ feature }}</span>
-                            {% endfor %}
+                        <h3 class="text-2xl font-bold text-[#0b2b44]">Photo Enhancement</h3>
+                        <div class="text-5xl font-extrabold text-[#1a5276] mt-4">KSh 100</div>
+                        <p class="text-gray-500 text-sm mt-1">per photo</p>
+                        <div class="flex items-center justify-center gap-2 mt-4 text-[#1a5276]">
+                            <i class="fas fa-clock"></i>
+                            <span class="font-semibold">Delivery within 30 minutes</span>
                         </div>
-                        <button onclick="document.getElementById('upload').scrollIntoView({behavior:'smooth'})" class="w-full py-2.5 mt-2 rounded-xl border border-slate-100 bg-brand-cream text-brand-dark font-semibold text-sm hover:bg-brand-blue hover:text-white transition-colors duration-300">
-                            Enhance This Type
+                        <div class="mt-6 space-y-2 text-sm text-gray-600">
+                            <p><i class="fas fa-check-circle text-[#2e86c1] mr-2"></i> AI-powered enhancement</p>
+                            <p><i class="fas fa-check-circle text-[#2e86c1] mr-2"></i> Color correction & sharpening</p>
+                            <p><i class="fas fa-check-circle text-[#2e86c1] mr-2"></i> Manual quality check</p>
+                            <p><i class="fas fa-check-circle text-[#2e86c1] mr-2"></i> Delivered to your email</p>
+                        </div>
+                        <button onclick="document.getElementById('upload').scrollIntoView({behavior:'smooth'})" class="mt-8 w-full py-4 rounded-full btn-primary text-white font-bold text-lg shadow-lg transition">
+                            <i class="fas fa-upload mr-2"></i> Start Now
                         </button>
                     </div>
                 </div>
-                {% endfor %}
             </div>
         </div>
     </section>
 
-    <section id="projects" class="py-24 px-4 bg-brand-dark text-white">
-        <div class="max-w-7xl mx-auto">
-            <div class="text-center mb-16">
-                <span class="text-brand-blue text-sm font-bold tracking-[0.2em] uppercase block mb-2">Before & After</span>
-                <h2 class="text-4xl md:text-5xl font-bold font-serif">Recent Masterpieces</h2>
-                <div class="w-16 h-1 bg-brand-blue mx-auto mt-4 rounded-full"></div>
+    <!-- ===== UPLOAD SECTION ===== -->
+    <section id="upload" class="py-20 px-4 bg-white">
+        <div class="max-w-4xl mx-auto">
+            <div class="text-center mb-14">
+                <span class="text-[#1a5276] text-sm font-semibold tracking-[0.2em] uppercase">Upload</span>
+                <h2 class="section-title text-4xl md:text-5xl text-[#0b2b44] mt-2">Upload Your Photo</h2>
+                <p class="text-gray-500 mt-3">Drag & drop or click to select your image</p>
             </div>
-            
-            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {% for project in projects %}
-                <div class="bg-brand-navy rounded-2xl overflow-hidden shadow-md group">
-                    <div class="relative h-60 overflow-hidden">
-                        <img src="{{ project.image }}" alt="{{ project.title }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
-                        <div class="absolute top-4 right-4 bg-brand-blue text-white text-xs font-bold px-3 py-1 rounded-full shadow-md">
-                            {{ project.category }}
-                        </div>
-                    </div>
-                    <div class="p-6">
-                        <h3 class="font-bold text-lg text-white mb-2">{{ project.title }}</h3>
-                        <p class="text-gray-300 text-sm leading-relaxed">{{ project.description }}</p>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-    </section>
 
-    <section class="py-16 px-4 bg-gradient-to-r from-brand-dark to-brand-navy border-y border-white/5">
-        <div class="max-w-7xl mx-auto">
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-                <div>
-                    <div class="text-4xl font-bold text-brand-blue font-serif mb-1">14,200+</div>
-                    <p class="text-gray-400 text-sm">Photos Upscaled</p>
-                </div>
-                <div>
-                    <div class="text-4xl font-bold text-brand-blue font-serif mb-1">30 Mins</div>
-                    <p class="text-gray-400 text-sm">Max Delivery Time</p>
-                </div>
-                <div>
-                    <div class="text-4xl font-bold text-brand-blue font-serif mb-1">KSh 100</div>
-                    <p class="text-gray-400 text-sm">Flat Rate Pricing</p>
-                </div>
-                <div>
-                    <div class="text-4xl font-bold text-brand-blue font-serif mb-1">99.4%</div>
-                    <p class="text-gray-400 text-sm">Accuracy Rating</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section id="testimonials" class="py-24 px-4 bg-brand-cream">
-        <div class="max-w-7xl mx-auto">
-            <div class="text-center mb-16">
-                <span class="text-brand-dark text-sm font-bold tracking-[0.2em] uppercase block mb-2">User Feedback</span>
-                <h2 class="text-4xl md:text-5xl font-bold text-brand-dark font-serif">Trusted Globally</h2>
-                <div class="w-16 h-1 bg-brand-blue mx-auto mt-4 rounded-full"></div>
-            </div>
-            
-            <div class="grid md:grid-cols-3 gap-8">
-                {% for testimonial in testimonials %}
-                <div class="bg-white rounded-2xl p-8 shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md transition-shadow">
-                    <div>
-                        <div class="flex text-yellow-400 text-xs gap-1 mb-4">
-                            {% for i in range(testimonial.rating) %}
-                            <i class="fas fa-star"></i>
-                            {% endfor %}
-                        </div>
-                        <p class="text-gray-600 italic leading-relaxed">"{{ testimonial.text }}"</p>
-                    </div>
-                    <div class="mt-6 flex items-center gap-4 pt-4 border-t border-gray-100">
-                        <div class="w-10 h-10 rounded-full bg-brand-blue/10 flex items-center justify-center text-brand-blue font-bold text-sm flex-shrink-0">
-                            {{ testimonial.name[0] }}
-                        </div>
+            <div class="glass-card bg-white rounded-3xl p-8 shadow-xl border border-gray-100">
+                <!-- Success Message -->
+                <div id="successMessage" class="success-message hidden mb-6">
+                    <div class="flex items-start gap-3">
+                        <i class="fas fa-check-circle text-[#065f46] text-xl mt-0.5"></i>
                         <div>
-                            <p class="font-bold text-brand-dark text-sm">{{ testimonial.name }}</p>
-                            <p class="text-gray-400 text-xs">{{ testimonial.location }} • {{ testimonial.project }}</p>
+                            <p class="font-semibold text-[#065f46]">Your photo has been received!</p>
+                            <p class="text-sm text-[#065f46]/80">Please complete payment. Once payment is confirmed, your photo will be manually enhanced and sent to your email.</p>
                         </div>
                     </div>
                 </div>
-                {% endfor %}
-            </div>
-        </div>
-    </section>
 
-    <section id="upload" class="py-24 px-4 bg-brand-dark relative overflow-hidden">
-        <div class="max-w-3xl mx-auto relative z-10">
-            <div class="text-center mb-12">
-                <span class="text-brand-blue text-sm font-bold tracking-[0.2em] uppercase block mb-2">Instant Processing</span>
-                <h2 class="text-4xl font-bold text-white font-serif">Upload & Enhance</h2>
-                <p class="text-gray-400 mt-3 text-sm">Fill in your data and pass your original file across safely</p>
-            </div>
-            
-            <div class="glass-card rounded-2xl p-8 sm:p-10 border border-white/5 shadow-2xl">
-                
-                {% if success %}
-                <div class="mb-8 p-6 bg-brand-blue/10 border border-brand-blue/30 rounded-xl text-gray-200 text-sm space-y-2">
-                    <div class="flex items-center gap-2 text-white font-bold text-base">
-                        <i class="fas fa-circle-check text-green-400"></i> Upload Complete!
-                    </div>
-                    <p>Your photo has been received. Please complete payment. Once payment is confirmed, your photo will be manually enhanced and sent to your email.</p>
-                </div>
-                {% endif %}
-
-                <form method="POST" action="/upload" enctype="multipart/form-data" class="space-y-6">
-                    
-                    <div>
-                        <label class="text-gray-300 text-xs font-semibold block mb-2">Choose Original Photo (JPG, JPEG, PNG, WEBP)</label>
-                        <div id="drop-zone" class="border-2 border-dashed border-white/10 hover:border-brand-blue rounded-xl p-8 text-center cursor-pointer transition-all bg-white/5 relative group">
-                            <input type="file" name="photo" id="file-input" accept=".jpg,.jpeg,.png,.webp" class="absolute inset-0 opacity-0 cursor-pointer" required>
-                            
-                            <div id="upload-prompt" class="space-y-3">
-                                <div class="text-3xl text-gray-400 group-hover:text-brand-blue transition-colors">
-                                    <i class="fas fa-cloud-arrow-up"></i>
-                                </div>
-                                <p class="text-sm text-gray-300 font-medium">Drag & drop your image here or <span class="text-brand-blue">browse files</span></p>
-                                <p class="text-[11px] text-gray-500">Supports files up to 15MB</p>
+                <form id="uploadForm" class="space-y-6" enctype="multipart/form-data">
+                    <!-- Drag & Drop Zone -->
+                    <div id="dropZone" class="drop-zone p-12 text-center cursor-pointer transition">
+                        <div class="flex flex-col items-center gap-4">
+                            <div class="w-20 h-20 rounded-full bg-[#1a5276]/10 flex items-center justify-center text-[#1a5276] text-3xl">
+                                <i class="fas fa-cloud-upload-alt"></i>
                             </div>
-
-                            <div id="preview-container" class="hidden flex flex-col items-center justify-center space-y-3">
-                                <img id="image-preview" src="#" alt="Thumbnail Preview" class="max-h-40 rounded-lg shadow-md border border-white/10 object-contain">
-                                <p id="file-name-text" class="text-xs text-brand-light font-medium truncate max-w-xs"></p>
-                                <button type="button" id="remove-file-btn" class="text-[11px] text-red-400 hover:underline">Change File</button>
+                            <div>
+                                <p class="text-lg font-semibold text-[#0b2b44]">Drag & drop your image here</p>
+                                <p class="text-sm text-gray-400">or click to browse</p>
+                                <p class="text-xs text-gray-400 mt-2">Supports JPG, JPEG, PNG, WEBP (max 20MB)</p>
                             </div>
+                            <input type="file" id="fileInput" name="photo" accept=".jpg,.jpeg,.png,.webp" class="hidden" required />
                         </div>
                     </div>
 
-                    <div class="grid md:grid-cols-2 gap-5">
+                    <!-- Thumbnail Preview -->
+                    <div id="thumbnailContainer" class="hidden mt-4 flex items-center gap-4 p-4 bg-gray-50 rounded-xl">
+                        <img id="thumbnailPreview" class="thumbnail-preview" src="#" alt="Preview" />
                         <div>
-                            <label class="text-gray-300 text-xs font-semibold block mb-2">Customer Name</label>
-                            <input type="text" name="name" placeholder="John Doe" class="contact-input text-sm" required>
+                            <p id="fileName" class="font-semibold text-[#0b2b44]"></p>
+                            <p id="fileSize" class="text-sm text-gray-400"></p>
+                        </div>
+                        <button type="button" id="removeFile" class="ml-auto text-red-500 hover:text-red-700 transition">
+                            <i class="fas fa-times-circle text-xl"></i>
+                        </button>
+                    </div>
+
+                    <!-- Customer Fields -->
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-sm font-semibold text-[#0b2b44] block mb-1">Full Name *</label>
+                            <input type="text" name="name" placeholder="John Doe" class="contact-input" required />
                         </div>
                         <div>
-                            <label class="text-gray-300 text-xs font-semibold block mb-2">Email Address</label>
-                            <input type="email" name="email" placeholder="john@example.com" class="contact-input text-sm" required>
+                            <label class="text-sm font-semibold text-[#0b2b44] block mb-1">Email Address *</label>
+                            <input type="email" name="email" placeholder="john@example.com" class="contact-input" required />
                         </div>
                     </div>
                     <div>
-                        <label class="text-gray-300 text-xs font-semibold block mb-2">Phone Number</label>
-                        <input type="tel" name="phone" placeholder="e.g. 0712345678" class="contact-input text-sm" required>
+                        <label class="text-sm font-semibold text-[#0b2b44] block mb-1">Phone Number</label>
+                        <input type="tel" name="phone" placeholder="+254 700 123 456" class="contact-input" />
                     </div>
 
-                    <button type="submit" class="w-full py-4 mt-2 rounded-xl bg-gradient-to-r from-brand-blue to-brand-light text-white font-bold text-base shadow-lg hover:scale-[1.01] transition-transform duration-300">
-                        <i class="fas fa-wand-magic-sparkles mr-2"></i> Upload Photo
+                    <button type="submit" class="w-full py-4 rounded-xl btn-primary text-white font-bold text-lg transition shadow-lg">
+                        <i class="fas fa-upload mr-2"></i> Upload Photo
                     </button>
                 </form>
             </div>
         </div>
     </section>
 
-    <footer class="bg-[#060b13] text-white/50 pt-16 pb-8 px-4 border-t border-slate-900">
-        <div class="max-w-7xl mx-auto space-y-12">
-            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-10">
-                <div class="space-y-4">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-navy to-brand-blue flex items-center justify-center text-white font-bold border border-brand-blue/20">
-                            <i class="fas fa-wand-magic-sparkles"></i>
-                        </div>
-                        <span class="text-xl font-bold text-white">iEnhance <span class="text-brand-blue">AI</span></span>
-                    </div>
-                    <p class="text-xs leading-relaxed text-gray-400">Professional manual enhancements powered by next-generation artificial intelligence matrix logic.</p>
-                    <div class="flex gap-2 pt-2">
-                        <a href="#" class="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:bg-brand-blue hover:text-white transition-colors"><i class="fab fa-facebook-f text-xs"></i></a>
-                        <a href="#" class="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:bg-brand-blue hover:text-white transition-colors"><i class="fab fa-instagram text-xs"></i></a>
-                        <a href="#" class="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:bg-brand-blue hover:text-white transition-colors"><i class="fab fa-twitter text-xs"></i></a>
-                    </div>
+    <!-- ===== ADMIN DASHBOARD ===== -->
+    <section id="admin" class="py-20 px-4 bg-[#f8fafc]">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center mb-14">
+                <span class="text-[#1a5276] text-sm font-semibold tracking-[0.2em] uppercase">Dashboard</span>
+                <h2 class="section-title text-4xl md:text-5xl text-[#0b2b44] mt-2">Admin Dashboard</h2>
+                <p class="text-gray-500 mt-3">Manage orders, track status, and deliver enhanced photos</p>
+            </div>
+
+            <!-- Stats -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                <div class="admin-card p-6 text-center">
+                    <div class="text-3xl font-bold text-[#1a5276]" id="totalOrders">0</div>
+                    <p class="text-sm text-gray-500">Total Orders</p>
                 </div>
-                
+                <div class="admin-card p-6 text-center">
+                    <div class="text-3xl font-bold text-[#f59e0b]" id="pendingOrders">0</div>
+                    <p class="text-sm text-gray-500">Pending</p>
+                </div>
+                <div class="admin-card p-6 text-center">
+                    <div class="text-3xl font-bold text-[#3b82f6]" id="processingOrders">0</div>
+                    <p class="text-sm text-gray-500">Processing</p>
+                </div>
+                <div class="admin-card p-6 text-center">
+                    <div class="text-3xl font-bold text-[#10b981]" id="completedOrders">0</div>
+                    <p class="text-sm text-gray-500">Completed</p>
+                </div>
+            </div>
+
+            <!-- Orders Table -->
+            <div class="admin-card p-6 shadow-sm overflow-x-auto">
+                <h3 class="text-lg font-bold text-[#0b2b44] mb-4">All Orders</h3>
+                <table class="admin-table w-full text-sm">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Customer</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th>Photo</th>
+                            <th>Status</th>
+                            <th>Enhanced</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ordersBody">
+                        <!-- Rows inserted by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== FOOTER ===== -->
+    <footer class="bg-[#0b2b44] text-white/50 pt-12 pb-6 px-4 border-t border-white/5">
+        <div class="max-w-7xl mx-auto">
+            <div class="grid md:grid-cols-3 gap-8">
                 <div>
-                    <h4 class="text-white font-semibold text-sm tracking-wider uppercase mb-4">Enhancements</h4>
-                    <ul class="space-y-2 text-xs">
-                        <li><a href="#" class="hover:text-brand-blue transition-colors">Portrait Sharpening</a></li>
-                        <li><a href="#" class="hover:text-brand-blue transition-colors">Vintage Restoration</a></li>
-                        <li><a href="#" class="hover:text-brand-blue transition-colors">Low-Light Repair</a></li>
-                        <li><a href="#" class="hover:text-brand-blue transition-colors">Product Image Fixes</a></li>
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#1a5276] to-[#2e86c1] flex items-center justify-center text-white text-lg"><i class="fas fa-crown"></i></div>
+                        <span class="text-xl font-bold text-white">Apex<span class="text-[#2e86c1]">Built</span></span>
+                    </div>
+                    <p class="text-sm leading-relaxed text-gray-400 max-w-xs">Professional AI photo enhancement and construction services.</p>
+                </div>
+                <div>
+                    <h4 class="text-white font-semibold text-base mb-3">Quick Links</h4>
+                    <ul class="space-y-1.5 text-sm">
+                        <li><a href="#home" class="hover:text-[#2e86c1] transition">Home</a></li>
+                        <li><a href="#pricing" class="hover:text-[#2e86c1] transition">Pricing</a></li>
+                        <li><a href="#upload" class="hover:text-[#2e86c1] transition">Upload</a></li>
+                        <li><a href="#admin" class="hover:text-[#2e86c1] transition">Dashboard</a></li>
                     </ul>
                 </div>
-                
                 <div>
-                    <h4 class="text-white font-semibold text-sm tracking-wider uppercase mb-4">Quick Navigation</h4>
-                    <ul class="space-y-2 text-xs">
-                        <li><a href="#" class="hover:text-brand-blue transition-colors">Pricing Structure</a></li>
-                        <li><a href="#" class="hover:text-brand-blue transition-colors">Recent Work</a></li>
-                        <li><a href="#" class="hover:text-brand-blue transition-colors">Customer Reviews</a></li>
-                        <li><a href="#" class="hover:text-brand-blue transition-colors">Admin Portal</a></li>
-                    </ul>
-                </div>
-                
-                <div>
-                    <h4 class="text-white font-semibold text-sm tracking-wider uppercase mb-4">System Support</h4>
-                    <ul class="space-y-2.5 text-xs text-gray-400">
-                        <li class="flex items-center gap-2"><i class="fas fa-shield-halved text-brand-blue w-4"></i> Secure Upload Matrix</li>
-                        <li class="flex items-center gap-2"><i class="fas fa-bolt text-brand-blue w-4"></i> Fast 30-Min SLA</li>
-                        <li class="flex items-center gap-2"><i class="fas fa-envelope text-brand-blue w-4"></i> support@ienhance.ai</li>
+                    <h4 class="text-white font-semibold text-base mb-3">Contact</h4>
+                    <ul class="space-y-2 text-sm">
+                        <li class="flex items-start gap-3"><i class="fas fa-phone text-[#2e86c1] mt-1"></i><span>+254 700 123 456</span></li>
+                        <li class="flex items-start gap-3"><i class="fas fa-envelope text-[#2e86c1] mt-1"></i><span>hello@apexbuilt.com</span></li>
+                        <li class="flex items-start gap-3"><i class="fas fa-map-pin text-[#2e86c1] mt-1"></i><span>Nairobi, Kenya</span></li>
                     </ul>
                 </div>
             </div>
-            
-            <div class="border-t border-slate-900 pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-gray-500">
-                <div class="flex gap-4">
-                    <a href="#" class="hover:text-brand-blue">Privacy Policy</a>
-                    <a href="#" class="hover:text-brand-blue">Terms of Service</a>
-                </div>
-                <p>© 2026 iEnhance AI. All rights reserved.</p>
+            <div class="border-t border-white/5 mt-8 pt-6 text-center text-xs text-gray-500">
+                © 2026 ApexBuilt. All rights reserved. Built with ❤️ by Calvin.
             </div>
         </div>
     </footer>
 
+    <!-- ===== JAVASCRIPT ===== -->
     <script>
-        // Smooth Sticky Header Background shifts
-        window.addEventListener('scroll', () => {
-            const navbar = document.getElementById('main-nav');
-            if (window.scrollY > 40) {
-                navbar.style.background = 'rgba(15, 23, 42, 0.95)';
-                navbar.style.boxShadow = '0 10px 30px -10px rgba(0,0,0,0.3)';
-            } else {
-                navbar.style.background = 'rgba(255, 255, 255, 0.03)';
-                navbar.style.boxShadow = 'none';
-            }
+        // ===== DRAG & DROP =====
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const thumbnailContainer = document.getElementById('thumbnailContainer');
+        const thumbnailPreview = document.getElementById('thumbnailPreview');
+        const fileName = document.getElementById('fileName');
+        const fileSize = document.getElementById('fileSize');
+        const removeFileBtn = document.getElementById('removeFile');
+
+        let selectedFile = null;
+
+        dropZone.addEventListener('click', () => fileInput.click());
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('drag-over');
         });
 
-        // Advanced Drag and Drop + Preview File Logic Engine
-        const dropZone = document.getElementById('drop-zone');
-        const fileInput = document.getElementById('file-input');
-        const uploadPrompt = document.getElementById('upload-prompt');
-        const previewContainer = document.getElementById('preview-container');
-        const imagePreview = document.getElementById('image-preview');
-        const fileNameText = document.getElementById('file-name-text');
-        const removeFileBtn = document.getElementById('remove-file-btn');
-
-        ['dragenter', 'dragover'].forEach(eventName => {
-            dropZone.addEventListener(eventName, (e) => {
-                e.preventDefault();
-                dropZone.classList.add('drag-over');
-            }, false);
-        });
-
-        ['dragleave', 'drop'].forEach(eventName => {
-            dropZone.addEventListener(eventName, (e) => {
-                e.preventDefault();
-                dropZone.classList.remove('drag-over');
-            }, false);
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('drag-over');
         });
 
         dropZone.addEventListener('drop', (e) => {
-            const dt = e.dataTransfer;
-            const files = dt.files;
-            if(files.length) {
-                fileInput.files = files;
-                handleFilePreview(files[0]);
+            e.preventDefault();
+            dropZone.classList.remove('drag-over');
+            if (e.dataTransfer.files.length > 0) {
+                handleFile(e.dataTransfer.files[0]);
             }
         });
 
-        fileInput.addEventListener('change', function() {
-            if(this.files.length) {
-                handleFilePreview(this.files[0]);
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
             }
         });
 
-        function handleFilePreview(file) {
-            if (file.type.match('image.*')) {
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onloadend = function() {
-                    imagePreview.src = reader.result;
-                    fileNameText.textContent = file.name;
-                    uploadPrompt.classList.add('hidden');
-                    previewContainer.classList.remove('hidden');
+        function handleFile(file) {
+            const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+            if (!validTypes.includes(file.type)) {
+                alert('Please upload a JPG, JPEG, PNG, or WEBP image.');
+                return;
+            }
+            if (file.size > 20 * 1024 * 1024) {
+                alert('File size must be less than 20MB.');
+                return;
+            }
+            selectedFile = file;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                thumbnailPreview.src = e.target.result;
+                fileName.textContent = file.name;
+                fileSize.textContent = (file.size / 1024 / 1024).toFixed(2) + ' MB';
+                thumbnailContainer.classList.remove('hidden');
+                dropZone.classList.add('hidden');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        removeFileBtn.addEventListener('click', () => {
+            selectedFile = null;
+            thumbnailContainer.classList.add('hidden');
+            dropZone.classList.remove('hidden');
+            fileInput.value = '';
+        });
+
+        // ===== FORM SUBMIT =====
+        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            if (!selectedFile) {
+                alert('Please select a photo to upload.');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('photo', selectedFile);
+            formData.append('name', document.querySelector('input[name="name"]').value);
+            formData.append('email', document.querySelector('input[name="email"]').value);
+            formData.append('phone', document.querySelector('input[name="phone"]').value);
+
+            // Simulate upload
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Uploading...';
+
+            // Simulate API call
+            await new Promise(resolve => setTimeout(resolve, 1500));
+
+            // Generate random order ID
+            const orderId = 'ORD-' + Date.now().toString().slice(-6);
+
+            // Add to table
+            const customerName = document.querySelector('input[name="name"]').value;
+            const customerEmail = document.querySelector('input[name="email"]').value;
+            const customerPhone = document.querySelector('input[name="phone"]').value || '—';
+
+            addOrderToTable(orderId, customerName, customerEmail, customerPhone, selectedFile.name);
+
+            // Show success message
+            document.getElementById('successMessage').classList.remove('hidden');
+            document.getElementById('successMessage').scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+            // Reset form
+            selectedFile = null;
+            thumbnailContainer.classList.add('hidden');
+            dropZone.classList.remove('hidden');
+            fileInput.value = '';
+            document.querySelector('input[name="name"]').value = '';
+            document.querySelector('input[name="email"]').value = '';
+            document.querySelector('input[name="phone"]').value = '';
+
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-upload mr-2"></i> Upload Photo';
+
+            updateStats();
+        });
+
+        // ===== ADMIN TABLE =====
+        let orders = [];
+        let orderCounter = 1;
+
+        function addOrderToTable(id, name, email, phone, photoName) {
+            const order = {
+                id: id,
+                name: name,
+                email: email,
+                phone: phone,
+                photo: photoName,
+                status: 'pending',
+                enhanced: '—'
+            };
+            orders.push(order);
+            renderOrders();
+            updateStats();
+        }
+
+        function renderOrders() {
+            const tbody = document.getElementById('ordersBody');
+            if (orders.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="text-center py-8 text-gray-400">
+                            <i class="fas fa-inbox text-2xl block mb-2"></i>
+                            No orders yet
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = orders.map((order, index) => `
+                <tr>
+                    <td class="font-medium text-[#0b2b44]">${index + 1}</td>
+                    <td class="font-medium">${order.name}</td>
+                    <td class="text-gray-600">${order.email}</td>
+                    <td class="text-gray-600">${order.phone}</td>
+                    <td>
+                        <span class="text-xs bg-gray-100 px-2 py-1 rounded">${order.photo}</span>
+                    </td>
+                    <td>
+                        <span class="status-badge status-${order.status}">${order.status.charAt(0).toUpperCase() + order.status.slice(1)}</span>
+                    </td>
+                    <td>
+                        ${order.enhanced !== '—' 
+                            ? `<span class="text-xs text-[#10b981]"><i class="fas fa-check-circle mr-1"></i> Delivered</span>`
+                            : `<span class="text-xs text-gray-400">—</span>`
+                        }
+                    </td>
+                    <td>
+                        <div class="flex gap-2 flex-wrap">
+                            ${order.status === 'pending' ? `
+                                <button onclick="updateStatus('${order.id}', 'processing')" class="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-full hover:bg-blue-200 transition">
+                                    Process
+                                </button>
+                            ` : ''}
+                            ${order.status === 'processing' ? `
+                                <button onclick="completeOrder('${order.id}')" class="text-xs bg-green-100 text-green-700 px-3 py-1 rounded-full hover:bg-green-200 transition">
+                                    Complete
+                                </button>
+                            ` : ''}
+                            ${order.status === 'completed' ? `
+                                <span class="text-xs text-green-600 font-medium"><i class="fas fa-check-circle"></i> Done</span>
+                            ` : ''}
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function updateStatus(id, newStatus) {
+            const order = orders.find(o => o.id === id);
+            if (order) {
+                order.status = newStatus;
+                renderOrders();
+                updateStats();
+                // Simulate email notification
+                if (newStatus === 'processing') {
+                    alert(`📧 Order ${id} is now Processing. Customer will be notified.`);
                 }
             }
         }
 
-        removeFileBtn.addEventListener('click', (e) => {
-            e.stopPropagation(); // Stop trigger event bubble loop over field click triggers
-            fileInput.value = '';
-            imagePreview.src = '#';
-            fileNameText.textContent = '';
-            previewContainer.classList.add('hidden');
-            uploadPrompt.classList.remove('hidden');
+        function completeOrder(id) {
+            const order = orders.find(o => o.id === id);
+            if (order) {
+                order.status = 'completed';
+                order.enhanced = 'Enhanced_' + order.photo;
+                renderOrders();
+                updateStats();
+                alert(`✅ Order ${id} completed!\n📧 Enhanced photo would be emailed to ${order.email} (simulated).`);
+            }
+        }
+
+        function updateStats() {
+            document.getElementById('totalOrders').textContent = orders.length;
+            document.getElementById('pendingOrders').textContent = orders.filter(o => o.status === 'pending').length;
+            document.getElementById('processingOrders').textContent = orders.filter(o => o.status === 'processing').length;
+            document.getElementById('completedOrders').textContent = orders.filter(o => o.status === 'completed').length;
+        }
+
+        // ===== SMOOTH SCROLL =====
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            });
         });
+
+        // Navbar scroll effect
+        window.addEventListener('scroll', () => {
+            const nav = document.querySelector('nav .glass-card');
+            if (window.scrollY > 40) {
+                nav.style.background = 'rgba(11, 43, 68, 0.92)';
+                nav.style.borderColor = 'rgba(46, 134, 193, 0.2)';
+            } else {
+                nav.style.background = 'rgba(255,255,255,0.05)';
+                nav.style.borderColor = 'rgba(255,255,255,0.05)';
+            }
+        });
+
+        // Seed some sample orders for demo
+        setTimeout(() => {
+            addOrderToTable('ORD-1001', 'Alice Mwangi', 'alice@example.com', '+254 712 345 678', 'family_photo.jpg');
+            addOrderToTable('ORD-1002', 'Brian Ochieng', 'brian@example.com', '+254 723 456 789', 'wedding_001.png');
+            // Update first order to processing for demo
+            setTimeout(() => {
+                if (orders.length > 0) {
+                    orders[0].status = 'processing';
+                    renderOrders();
+                    updateStats();
+                }
+            }, 500);
+        }, 500);
     </script>
+
 </body>
 </html>
